@@ -90,3 +90,6 @@ fastlane/test_output
 iOSInjectionProject/
 
 .*.swp
+.swiftpm/xcode/package.xcworkspace/
+package.xcworkspace/
+
