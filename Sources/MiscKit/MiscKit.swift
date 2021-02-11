@@ -107,3 +107,14 @@ import OSLog
         return "\(ms)ms"
     }
 }
+
+/// Localize the given string
+@inlinable public func loc(_ msg: StaticString, comment: String = "") -> String {
+    NSLocalizedString(msg.description, comment: comment)
+}
+
+/// Localize the given pattern
+@inlinable public func locfmt(_ msg: StaticString, _ args: CVarArg...) -> String {
+    // this works, but can be dangerous when a bad format specifier is used (e.g., %d with a string)
+    String(format: loc(msg), locale: Locale.current, arguments: args)
+}

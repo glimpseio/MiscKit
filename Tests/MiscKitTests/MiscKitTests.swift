@@ -13,5 +13,10 @@ class MiscKitTests : XCTestCase {
         prf("msg") { dbg("block with autoclosure message") }
         let _: Double = prf(msg: { "closure value message: \($0)" }) { 1.23}
     }
+
+    func testLoc() {
+        XCTAssertEqual("1,234,567.890000", locfmt("%f", 1234567.890))
+    }
+
 }
 
