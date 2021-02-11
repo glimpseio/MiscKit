@@ -1,15 +1,11 @@
 import XCTest
-@testable import MiscKit
+import Dispatch
+import MiscKit
 
-final class MiscKitTests: XCTestCase {
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
-        XCTAssertEqual(MiscKit().text, "Hello, World!")
+class MiscKitTests : XCTestCase {
+    func testDbg() {
+        dbg("test message")
+        dbg("test message", "with", "arguments", nil, 1, 2, 3)
     }
-
-    static var allTests = [
-        ("testExample", testExample),
-    ]
 }
+
