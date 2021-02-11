@@ -91,7 +91,7 @@ import OSLog
 }
 #endif
 
-#if canImport(CoreFoundation)
+#if canImport(Darwin)
 
 @inlinable public func timeInMS(_ from: CFAbsoluteTime, to: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()) -> String {
     return "\(Int64(round((to - from) * 1000)))ms"
@@ -155,19 +155,85 @@ import OSLog
 #if canImport(Dispatch)
 extension Collection {
     /// Executes the given block concurrently using `DispatchQueue.concurrentPerform`, returning the array of results
-    @inlinable public func qmap<T>(concurrent: Bool = true, block: (Element) throws -> (T)) throws -> [T] {
-        let queue = DispatchQueue(label: "resultsLock")
+    /// - Note: this is the non-throwing form of `qmap`
+    @inlinable public func qmap<T>(concurrent: Bool = true, block: (Element) -> (T)) -> [T] {
+        let items = Array(self)
+        var results: [T?] = Array(repeating: nil, count: items.count)
 
+        let resultsLock = DispatchQueue(label: "resultsLock")
+        DispatchQueue.concurrentPerform(iterations: items.count) { i in
+            resultsLock.sync { results[i] = block(items[i]) }
+        }
+
+        return results.compactMap({ $0 })
+    }
+
+    /// Executes the given block concurrently using `DispatchQueue.concurrentPerform`, returning the array of results. If any of the blocks throws an error, the first error encountered will be thrown, but all the blocks will always be evaluated irrespective of whether any of them throw an error.
+    /// - Note: this is the throwing form of `qmap`
+    @inlinable public func qmap<T>(concurrent: Bool = true, block: (Element) throws -> (T)) throws -> [T] {
         let items = Array(self)
         var results: [Result<T, Error>?] = Array(repeating: nil, count: items.count)
 
+        let resultsLock = DispatchQueue(label: "resultsLock")
         DispatchQueue.concurrentPerform(iterations: items.count) { i in
             let result = Result { try block(items[i]) }
-            queue.sync { results[i] = result }
+            resultsLock.sync { results[i] = result }
         }
 
         // returns all the results, or throws the first error encountered
-        return try results.map { result in try result!.get() }
+        // we can't use "rethrows" here, since we can't check at runtime whether any of the closures were throwing or not
+        return try results.compactMap { try $0?.get() }
     }
 }
 #endif
+
+/// fills in the given error pointer with the various parameters and returns the given value
+/// - Parameters:
+///   - args: The arguments that will be formatted into the description of the error
+///   - failureReason: the title for the error that will be displayed in any Cocoa alerts (corresponding to `NSLocalizedFailureReasonErrorKey`)
+///   - recoverySuggestion: the subtitle for the error that will be displayed in Cocoa alerts (corresponding to `NSLocalizedRecoverySuggestionErrorKey`)
+///   - recoveryOptions: a list of possible recovery options
+///   - underlyingError: a nested error
+///   - trumpError: whether to override the error
+public func err(_ args: Any..., title: String? = nil, subtitle recoverySuggestion: String? = nil, recoveryOptions : [String]? = nil, failureReason: String? = nil, error underlyingError: Error? = nil, trumpError: Bool = false, domain: String? = nil, code: Int = 0, url: URL? = nil, file: String? = nil, sourceFile: StaticString = #file, sourceLine: UInt = #line) -> NSError {
+
+    var description = title ?? ""
+    for arg in args {
+        if !description.isEmpty { description += " " }
+        description += String(describing: arg)
+    }
+
+    var info = [String:NSObject]()
+
+    info[NSLocalizedDescriptionKey] = description as NSString
+
+    if let recoverySuggestion = recoverySuggestion {
+        info[NSLocalizedRecoverySuggestionErrorKey] = recoverySuggestion as NSString
+    }
+
+    if let failureReason = failureReason {
+        info[NSLocalizedFailureReasonErrorKey] = failureReason as NSString
+    }
+
+    if let recoveryOptions = recoveryOptions {
+        info[NSLocalizedRecoveryOptionsErrorKey] = recoveryOptions as NSArray
+    }
+
+    if let url = url {
+        info[NSURLErrorKey] = url as NSURL
+    }
+
+    if let file = file {
+        info[NSFilePathErrorKey] = file as NSString
+    }
+
+    if let underlyingError = underlyingError {
+        info[NSUnderlyingErrorKey] = underlyingError as NSError
+        // we lose some non-NSError information when wrapping errors
+        info[NSLocalizedFailureReasonErrorKey] = String(describing: underlyingError) as NSString
+    }
+
+    info["Source"] = ((String(describing: sourceFile) as NSString).lastPathComponent + ":" + String(sourceLine)) as NSString
+
+    return NSError(domain: domain ?? ((String(describing: sourceFile) as NSString).lastPathComponent as NSString).deletingPathExtension, code: code, userInfo: info)
+}

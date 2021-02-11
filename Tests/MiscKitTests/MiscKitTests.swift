@@ -23,8 +23,15 @@ class MiscKitTests : XCTestCase {
         wip("this is a work-in-progress")
     }
 
+    #if canImport(Dispatch)
     func testQMap() {
-        XCTAssertEqual(Array(Int32(1)...99999), try (Int64(1)...99999).qmap(concurrent: true) { Int32(String($0)) })
+        XCTAssertEqual(Array(Int32(1)...99999), (Int64(1)...99999).qmap(concurrent: true) { Int32(String($0)) })
+        XCTAssertThrowsError(try (Int64(1)...99999).qmap(concurrent: true) { i in throw err("fail #\(i)") })
+    }
+    #endif
+
+    func testErr() {
+        XCTAssertThrowsError(try { throw err("X") }())
     }
 
 }
