@@ -1,9 +1,1 @@
-import XCTest
-
-import MiscKitTests
-
-var tests = [XCTestCaseEntry]()
-tests += MiscKitTests.allTests()
-XCTMain(tests)
-import XCTest
-
+fatalError("Run the tests with `swift test --enable-test-discovery`.")
