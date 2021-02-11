@@ -244,3 +244,4 @@ public func err(_ args: Any..., title: String? = nil, subtitle recoverySuggestio
 
     return NSError(domain: domain ?? ((String(describing: sourceFile) as NSString).lastPathComponent as NSString).deletingPathExtension, code: code, userInfo: info)
 }
+
