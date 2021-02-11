@@ -119,14 +119,14 @@ import OSLog
 #endif
 
 /// Localize the given string
-@inlinable public func loc(_ msg: StaticString, comment: String = "") -> String {
-    NSLocalizedString(msg.description, comment: comment)
+@inlinable public func loc(_ msg: StaticString, comment: StaticString = "") -> String {
+    NSLocalizedString(msg.description, comment: comment.description)
 }
 
 /// Localize the given pattern
-@inlinable public func locfmt(_ msg: StaticString, _ args: CVarArg...) -> String {
+@inlinable public func locfmt(_ msg: StaticString, _ args: CVarArg..., comment: StaticString = "") -> String {
     // this works, but can be dangerous when a bad format specifier is used (e.g., %d with a string)
-    String(format: loc(msg), locale: Locale.current, arguments: args)
+    String(format: loc(msg, comment: comment), locale: Locale.current, arguments: args)
 }
 
 #if canImport(Darwin)
