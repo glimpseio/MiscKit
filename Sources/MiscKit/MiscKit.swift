@@ -33,4 +33,3 @@ import OSLog
     }
     #endif
 }
-
