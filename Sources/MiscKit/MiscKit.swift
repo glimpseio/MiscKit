@@ -59,6 +59,7 @@ import OSLog
 
 #if canImport(OSLog)
 import OSLog
+
 @available(OSX 10.14, *)
 @usableFromInline let signpostLog = OSLog(subsystem: "net.misckit.MiscKit.prf", category: .pointsOfInterest)
 
@@ -69,22 +70,28 @@ import OSLog
 /// - Parameter fileName: the fileName containg the calling function
 /// - Parameter lineNumber: the line on which the function was called
 /// - Parameter block: the block to execute
-@available(OSX 10.14, *)
-@inlinable public func prf<T>(_ message: @autoclosure () -> String = "", msg: (T) -> String = { _ in "" }, threshold: Double = -0.0, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line, block: () throws -> T) rethrows -> T {
+@inlinable public func prf<T>(_ message: @autoclosure () -> String? = nil, msg messageBlock: ((T) -> String)? = nil, threshold: Double = -0.0, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line, block: () throws -> T) rethrows -> T {
     //#if DEBUG
-    os_signpost(.begin, log: signpostLog, name: functionName)
-    defer { os_signpost(.end, log: signpostLog, name: functionName) }
 
     let start: UInt64 = nanos()
-    let ret = try block()
+
+    let result: T
+    if #available(OSX 10.14, *) {
+        os_signpost(.begin, log: signpostLog, name: functionName)
+        defer { os_signpost(.end, log: signpostLog, name: functionName) }
+        result = try block()
+    } else {
+        result = try block()
+    }
+
     let end: UInt64 = max(nanos(), start)
     let secs = Double(end - start) / 1_000_000_000.0
 
     if secs >= threshold {
         let str = timeInMS(fromNanos: start, to: end)
-        dbg(msg(ret), "time: \(str)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+        dbg(message(), messageBlock?(result), "time: \(str)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
     }
-    return ret
+    return result
     //#else
     //return try block()
     //#endif

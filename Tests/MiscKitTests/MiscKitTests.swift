@@ -35,6 +35,4 @@ class MiscKitTests : XCTestCase {
     func testErr() {
         XCTAssertThrowsError(try { throw err("X") }())
     }
-
 }
-
