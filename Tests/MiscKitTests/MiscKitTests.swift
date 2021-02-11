@@ -18,5 +18,14 @@ class MiscKitTests : XCTestCase {
         XCTAssertEqual("1,234,567.890000", locfmt("%f", 1234567.890))
     }
 
+    @available(*, deprecated)
+    func testWip() {
+        wip("this is a work-in-progress")
+    }
+
+    func testQMap() {
+        XCTAssertEqual(Array(Int32(1)...99999), try (Int64(1)...99999).qmap(concurrent: true) { Int32(String($0)) })
+    }
+
 }
 

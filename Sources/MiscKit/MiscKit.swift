@@ -1,6 +1,12 @@
-//  Marc Prud'hommeaux, 2014-20201
+// Various misc utilities
+// Marc Prud'hommeaux, 2014-20201
 
 import Foundation
+
+/// Work-in-progress, simply to highlight a line with a deprecation warning
+@available(*, deprecated, message: "work-in-progress")
+@discardableResult @inlinable public func wip<T>(_ value: T) -> T { value }
+
 
 #if canImport(OSLog)
 import OSLog
@@ -120,7 +126,45 @@ import OSLog
     String(format: loc(msg), locale: Locale.current, arguments: args)
 }
 
+#if canImport(Darwin)
+/// The current total memory size.
+/// Thanks, Quinn: https://developer.apple.com/forums/thread/105088
+@inlinable public func memoryFootprint() -> mach_vm_size_t? {
+    // The `TASK_VM_INFO_COUNT` and `TASK_VM_INFO_REV1_COUNT` macros are too
+    // complex for the Swift C importer, so we have to define them ourselves.
+    let TASK_VM_INFO_COUNT = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
+    let TASK_VM_INFO_REV1_COUNT = mach_msg_type_number_t(MemoryLayout.offset(of: \task_vm_info_data_t.min_address)! / MemoryLayout<integer_t>.size)
+    var info = task_vm_info_data_t()
+    var count = TASK_VM_INFO_COUNT
+    let kr = withUnsafeMutablePointer(to: &info) { infoPtr in
+        infoPtr.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { intPtr in
+            task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), intPtr, &count)
+        }
+    }
+    guard
+        kr == KERN_SUCCESS,
+        count >= TASK_VM_INFO_REV1_COUNT
+    else { return nil }
+    return info.phys_footprint
+}
+#endif
 
-/// Work-in-progress, simply to highlight a line with a deprecation warning
-@available(*, deprecated, message: "work-in-progress")
-@discardableResult @inlinable public func wip<T>(_ value: T) -> T { value }
+#if canImport(Dispatch)
+extension Collection {
+    /// Executes the given block concurrently using `DispatchQueue.concurrentPerform`, returning the array of results
+    @inlinable public func qmap<T>(concurrent: Bool = true, block: (Element) throws -> (T)) throws -> [T] {
+        let queue = DispatchQueue(label: "resultsLock")
+
+        let items = Array(self)
+        var results: [Result<T, Error>?] = Array(repeating: nil, count: items.count)
+
+        DispatchQueue.concurrentPerform(iterations: items.count) { i in
+            let result = Result { try block(items[i]) }
+            queue.sync { results[i] = result }
+        }
+
+        // returns all the results, or throws the first error encountered
+        return try results.map { result in try result!.get() }
+    }
+}
+#endif
