@@ -91,6 +91,7 @@ import OSLog
 }
 #endif
 
+#if canImport(CoreFoundation)
 
 @inlinable public func timeInMS(_ from: CFAbsoluteTime, to: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()) -> String {
     return "\(Int64(round((to - from) * 1000)))ms"
@@ -114,6 +115,8 @@ import OSLog
         return "\(ms)ms"
     }
 }
+
+#endif
 
 /// Localize the given string
 @inlinable public func loc(_ msg: StaticString, comment: String = "") -> String {
