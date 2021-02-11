@@ -118,3 +118,8 @@ import OSLog
     // this works, but can be dangerous when a bad format specifier is used (e.g., %d with a string)
     String(format: loc(msg), locale: Locale.current, arguments: args)
 }
+
+
+/// Work-in-progress, simply to highlight a line with a deprecation warning
+@available(*, deprecated, message: "work-in-progress")
+@discardableResult @inlinable public func wip<T>(_ value: T) -> T { value }
