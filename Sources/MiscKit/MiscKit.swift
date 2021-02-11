@@ -41,6 +41,15 @@ import OSLog
     }
 }
 
+#if canImport(Darwin)
+/// Returns the current nanoseconds (from an arbitrary base). This may be coarse or fine-grained, and is not guaranteed to be monotonically increasing.
+@inlinable public func nanos() -> UInt64 {
+    // mach_absolute_time() // don't use this, because it doesn't return nanoseconds under ARM
+    // clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)
+    // clock_gettime_nsec_np(CLOCK_UPTIME_RAW) // like “CLOCK_MONOTONIC_RAW, but that does not increment while the system is asleep”
+    mach_approximate_time() // use the approximate time to save a few cycles
+}
+#endif
 
 #if canImport(OSLog)
 import OSLog
@@ -75,14 +84,6 @@ import OSLog
     //#endif
 }
 #endif
-
-/// Returns the current nanoseconds (from an arbitrary base). This may be coarse or fine-grained, and is not guaranteed to be monotonically increasing.
-@inlinable public func nanos() -> UInt64 {
-    // mach_absolute_time() // don't use this, because it doesn't return nanoseconds under ARM
-    // clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)
-    // clock_gettime_nsec_np(CLOCK_UPTIME_RAW) // like “CLOCK_MONOTONIC_RAW, but that does not increment while the system is asleep”
-    mach_approximate_time() // use the approximate time to save a few cycles
-}
 
 
 @inlinable public func timeInMS(_ from: CFAbsoluteTime, to: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()) -> String {
