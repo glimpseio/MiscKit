@@ -40,3 +40,70 @@ import OSLog
         }
     }
 }
+
+
+#if canImport(OSLog)
+import OSLog
+@available(OSX 10.14, *)
+@usableFromInline let signpostLog = OSLog(subsystem: "net.misckit.MiscKit.prf", category: .pointsOfInterest)
+
+/// Output a message with the amount of time the given block took to exeucte
+/// - Parameter msg: the message prefix closure accepting the result of the `block`
+/// - Parameter threshold: the threshold below which a message will not be printed
+/// - Parameter functionName: the name of the calling function
+/// - Parameter fileName: the fileName containg the calling function
+/// - Parameter lineNumber: the line on which the function was called
+/// - Parameter block: the block to execute
+@available(OSX 10.14, *)
+@inlinable public func prf<T>(_ message: @autoclosure () -> String = "", msg: (T) -> String = { _ in "" }, threshold: Double = -0.0, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line, block: () throws -> T) rethrows -> T {
+    //#if DEBUG
+    os_signpost(.begin, log: signpostLog, name: functionName)
+    defer { os_signpost(.end, log: signpostLog, name: functionName) }
+
+    let start: UInt64 = nanos()
+    let ret = try block()
+    let end: UInt64 = max(nanos(), start)
+    let secs = Double(end - start) / 1_000_000_000.0
+
+    if secs >= threshold {
+        let str = timeInMS(fromNanos: start, to: end)
+        dbg(msg(ret), "time: \(str)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+    }
+    return ret
+    //#else
+    //return try block()
+    //#endif
+}
+#endif
+
+/// Returns the current nanoseconds (from an arbitrary base). This may be coarse or fine-grained, and is not guaranteed to be monotonically increasing.
+@inlinable public func nanos() -> UInt64 {
+    // mach_absolute_time() // don't use this, because it doesn't return nanoseconds under ARM
+    // clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)
+    // clock_gettime_nsec_np(CLOCK_UPTIME_RAW) // like “CLOCK_MONOTONIC_RAW, but that does not increment while the system is asleep”
+    mach_approximate_time() // use the approximate time to save a few cycles
+}
+
+
+@inlinable public func timeInMS(_ from: CFAbsoluteTime, to: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()) -> String {
+    return "\(Int64(round((to - from) * 1000)))ms"
+}
+
+@inlinable public func timeInMS(fromDate from: Date, to: Date = Date()) -> String {
+    timeInMS(from.timeIntervalSinceReferenceDate, to: to.timeIntervalSinceReferenceDate)
+}
+
+/// Returns a description of the number of nanoseconds that have elapsed between `from` and `to`.
+/// - Parameters:
+///   - fromNanos: the start time (typically obtained with `nanos()`)
+///   - to: the end time, faulting to `nanos()`
+@inlinable public func timeInMS(fromNanos from: UInt64, to: UInt64 = nanos()) -> String {
+
+    let ms = Double(to - from) / 1_000_000
+    if ms >= 1 {
+        // round when over 1ms for formatting
+        return "\(Int64(ceil(ms)))ms"
+    } else {
+        return "\(ms)ms"
+    }
+}
