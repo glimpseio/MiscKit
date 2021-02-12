@@ -6,3 +6,30 @@
 
 MiscKit is a small collection of utilities to be shared across projects.
 
+To use, add the following to your `Package.swift`:
+
+```swift
+// swift-tools-version:5.3
+import PackageDescription
+
+let package = Package(
+    name: "MyPackage",
+    products: [
+        .library(
+            name: "MyPackage",
+            targets: ["MyPackage"]),
+    ],
+    dependencies: [
+        .package(name: "MiscKit", url: "https://github.com/glimpseio/MiscKit", .branch("main")),
+    ],
+    targets: [
+        .target(
+            name: "MyPackage",
+            dependencies: ["MiscKit"]),
+        .testTarget(
+            name: "MyPackageTests",
+            dependencies: ["MyPackage"]),
+    ]
+)
+```
+
