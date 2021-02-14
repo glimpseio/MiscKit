@@ -6,6 +6,7 @@ let package = Package(
     products: [
         .library(
             name: "MiscKit",
+            type: .dynamic,
             targets: ["MiscKit"]),
     ],
     dependencies: [
