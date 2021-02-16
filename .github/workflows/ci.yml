@@ -27,11 +27,11 @@ jobs:
     - name: Run tests
       run: swift test --enable-test-discovery
 
-  macOS11:
-    name: MiscKit macOS11 Tests
-    runs-on: macos-11.0
-    steps:
-    - uses: actions/checkout@v2
-    - name: Run tests
-      run: swift test --enable-test-discovery
+  #macOS11:
+  #  name: MiscKit macOS11 Tests
+  #  runs-on: macos-11.0
+  #  steps:
+  #  - uses: actions/checkout@v2
+  #  - name: Run tests
+  #    run: swift test --enable-test-discovery
 
