@@ -35,4 +35,12 @@ class MiscKitTests : XCTestCase {
     func testErr() {
         XCTAssertThrowsError(try { throw err("X") }())
     }
+
+    func testCfg() {
+        let str = cfg("X") { str in
+            str += "YZ"
+        }
+        
+        XCTAssertEqual("XYZ", str)
+    }
 }

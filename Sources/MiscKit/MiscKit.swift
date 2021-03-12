@@ -47,6 +47,13 @@ import OSLog
     }
 }
 
+/// Function that merely executes a closure with the given initializer; useful for statically initializing let values while still enabling type inferrence.
+@discardableResult @inlinable public func cfg<T>(_ value: @autoclosure () throws -> T, f: (inout T) throws -> ()) rethrows -> T {
+    var v = try value()
+    try f(&v)
+    return v
+}
+
 #if canImport(Darwin)
 /// Returns the current nanoseconds (from an arbitrary base). This may be coarse or fine-grained, and is not guaranteed to be monotonically increasing.
 @inlinable public func nanos() -> UInt64 {
