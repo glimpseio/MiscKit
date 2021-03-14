@@ -68,6 +68,7 @@ import OSLog
 import OSLog
 
 @available(OSX 10.14, *)
+@available(iOS 12.0, *)
 @usableFromInline let signpostLog = OSLog(subsystem: "net.misckit.MiscKit.prf", category: .pointsOfInterest)
 
 /// Output a message with the amount of time the given block took to exeucte
@@ -77,19 +78,16 @@ import OSLog
 /// - Parameter fileName: the fileName containg the calling function
 /// - Parameter lineNumber: the line on which the function was called
 /// - Parameter block: the block to execute
+@available(OSX 10.14, *)
+@available(iOS 12.0, *)
 @inlinable public func prf<T>(_ message: @autoclosure () -> String? = nil, msg messageBlock: ((T) -> String)? = nil, threshold: Double = -0.0, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line, block: () throws -> T) rethrows -> T {
     //#if DEBUG
 
     let start: UInt64 = nanos()
 
-    let result: T
-    if #available(OSX 10.14, *) {
-        os_signpost(.begin, log: signpostLog, name: functionName)
-        defer { os_signpost(.end, log: signpostLog, name: functionName) }
-        result = try block()
-    } else {
-        result = try block()
-    }
+    os_signpost(.begin, log: signpostLog, name: functionName)
+    defer { os_signpost(.end, log: signpostLog, name: functionName) }
+    let result = try block()
 
     let end: UInt64 = max(nanos(), start)
     let secs = Double(end - start) / 1_000_000_000.0
