@@ -88,8 +88,9 @@ import OSLog
     let secs = Double(end - start) / 1_000_000_000.0
 
     if secs >= threshold {
-        let str = timeInMS(fromNanos: start, to: end)
-        //dbg(message(), messageBlock?(result), "time: \(str)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+        let timeStr = timeInMS(fromNanos: start, to: end)
+
+        dbg(message(), messageBlock?(result), "time: \(timeStr)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
     }
     return result
     //#else

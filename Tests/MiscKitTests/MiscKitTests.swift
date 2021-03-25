@@ -4,12 +4,14 @@ import Dispatch
 import MiscKit
 
 class MiscKitTests : XCTestCase {
+    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     func testDbg() {
         dbg("test message")
         dbg("test message", "with", "arguments", nil, 1, 2, 3)
     }
 
     #if canImport(OSLog)
+    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     func testPrf() {
         prf { dbg("block with no message") }
         prf("msg") { dbg("block with autoclosure message") }
