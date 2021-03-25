@@ -1,9 +1,7 @@
-
-import Dispatch
-import MiscKit
-
 #if !os(watchOS) // no testing on watchOS
 import XCTest
+import Dispatch
+import MiscKit
 
 class MiscKitTests : XCTestCase {
     func testDbg() {
