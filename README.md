@@ -4,7 +4,7 @@
 [![Swift Package Manager compatible](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://github.com/apple/swift-package-manager)
 [![Platform](https://img.shields.io/badge/Platforms-macOS%20|%20iOS%20|%20tvOS%20|%20watchOS%20|%20Linux-lightgrey.svg)](https://github.com/glimpseio/MisMisc)
 
-MiscKit is a small collection of utilities to be shared across projects.
+MiscKit is a collection of Swift miscellanea: logging, pooling, etc..
 
 To use, add the following to your `Package.swift`:
 
@@ -20,7 +20,7 @@ let package = Package(
             targets: ["MyPackage"]),
     ],
     dependencies: [
-        .package(name: "MiscKit", url: "https://github.com/glimpseio/MiscKit", .branch("main")),
+        .package(name: "MiscKit", url: "https://github.com/glimpseio/MiscKit.git", .branch("main")),
     ],
     targets: [
         .target(
