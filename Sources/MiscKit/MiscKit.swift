@@ -15,8 +15,7 @@ import OSLog
 /// Logs the given items to `os_log` if `DEBUG` is set
 /// - Parameters:
 ///   - level: the level: 0 for default, 1 for debug, 2 for info, 3 for error, 4+ for fault
-@available(OSX 10.14, *)
-@available(iOS 12.0, *)
+@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 @inlinable public func dbg(level: UInt8 = 0, _ arg1: @autoclosure () -> Any? = nil, _ arg2: @autoclosure () -> Any? = nil, _ arg3: @autoclosure () -> Any? = nil, _ arg4: @autoclosure () -> Any? = nil, _ arg5: @autoclosure () -> Any? = nil, _ arg6: @autoclosure () -> Any? = nil, _ arg7: @autoclosure () -> Any? = nil, _ arg8: @autoclosure () -> Any? = nil, _ arg9: @autoclosure () -> Any? = nil, _ arg10: @autoclosure () -> Any? = nil, _ arg11: @autoclosure () -> Any? = nil, _ arg12: @autoclosure () -> Any? = nil, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line) {
     let logit: Bool
     #if DEBUG
@@ -65,8 +64,7 @@ import OSLog
 #if canImport(OSLog)
 import OSLog
 
-@available(OSX 10.14, *)
-@available(iOS 12.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 @usableFromInline let signpostLog = OSLog(subsystem: "net.misckit.MiscKit.prf", category: .pointsOfInterest)
 
 /// Output a message with the amount of time the given block took to exeucte
@@ -76,8 +74,7 @@ import OSLog
 /// - Parameter fileName: the fileName containg the calling function
 /// - Parameter lineNumber: the line on which the function was called
 /// - Parameter block: the block to execute
-@available(OSX 10.14, *)
-@available(iOS 12.0, *)
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 @inlinable public func prf<T>(_ message: @autoclosure () -> String? = nil, msg messageBlock: ((T) -> String)? = nil, threshold: Double = -0.0, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line, block: () throws -> T) rethrows -> T {
     //#if DEBUG
 
@@ -92,7 +89,7 @@ import OSLog
 
     if secs >= threshold {
         let str = timeInMS(fromNanos: start, to: end)
-        dbg(message(), messageBlock?(result), "time: \(str)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+        //dbg(message(), messageBlock?(result), "time: \(str)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
     }
     return result
     //#else
@@ -248,3 +245,132 @@ public func err(_ args: Any..., title: String? = nil, subtitle recoverySuggestio
     return NSError(domain: domain ?? ((String(describing: sourceFile) as NSString).lastPathComponent as NSString).deletingPathExtension, code: code, userInfo: info)
 }
 
+
+public extension DispatchQueue {
+    /// If the current thread is main than execute the given code imediately;
+    /// otherwise queue it for async execution
+    @inlinable static func mainOrAsync(_ f: @escaping () -> ()) {
+        if Thread.isMainThread {
+            f()
+        } else {
+            DispatchQueue.main.async(execute: f)
+        }
+    }
+
+    /// Issues an `asyncAfter`, cancelling any `reschedule` work item and replacing it with the new one.
+    /// This can be used for debouncing multiple requests into only the final one.
+    ///
+    /// Note that this does not guarantee that the outstanding `reschedule` work item
+    /// will not be completed, since it may have already executed or currently be executing
+    /// when this call is performed.
+    ///
+    /// - Parameter deadline: the time after which the work item should be executed, given as a `DispatchTime`.
+    /// - Parameter reschedule: the work item to cancel (if non-empty) and replace with the newly created item.
+    /// - Parameter execute: The work item to be invoked on the queue.
+    ///
+    /// - SeeAlso: `async(execute:)`
+    /// - SeeAlso: `asyncAfter(deadline:execute:)`
+    /// - SeeAlso: `DispatchQoS`
+    /// - SeeAlso: `DispatchWorkItemFlags`
+    /// - SeeAlso: `DispatchTime`
+    @inlinable func asyncAfter(deadline: DispatchTime? = nil, reschedule workItem: inout DispatchWorkItem?, execute block: @escaping () -> Void) {
+        if let workItem = workItem, !workItem.isCancelled {
+            workItem.cancel()
+        }
+        let item = DispatchWorkItem(block: block)
+        if let deadline = deadline {
+            self.asyncAfter(deadline: deadline, execute: item)
+        } else {
+            self.async(execute: item)
+        }
+        workItem = item // update the replacing item
+    }
+}
+
+
+/// A pool of potentially-expensive resources that will be created on-demand in a thread-safe way.
+/// Pools can be configured to shrink down to a `preferredPoolSize` after a `poolShrinkDelay`.
+public class Pool<T> {
+    public var preferredPoolSize: Int?
+
+    /// The amount of time to wait after the last borrow before we shrink the pool
+    public var poolShrinkDelay: TimeInterval = 9.0 // seconds
+
+    /// The queue for synchronizing access to the pooled values
+    let lockQueue = DispatchQueue(label: "lockQueue")
+
+    /// The pool of objects
+    var pool: [T] = []
+
+    /// The number of elements in the pool
+    public var count: Int { return lockQueue.sync { pool.count } }
+
+    /// The dispatch item for shrinking the queue
+    private var shrinkWork: DispatchWorkItem? = nil
+
+    private let shrinkWorkLock = DispatchQueue(label: "shrinkWorkLock")
+
+    public init() { }
+
+    /// Returns the size of the pool
+    public var size: Int {
+        return lockQueue.sync { pool.count }
+    }
+
+    /// Borrow a resource, returning it after the block is executed. If the pool is currently empty, a new instance will be created and then returned to the pool once the block is complete.
+    public func borrowing<U>(borrower: () throws -> T, _ f: (T) throws -> U) rethrows -> U {
+        var last: T?
+        lockQueue.sync { last = pool.popLast() }
+        //dbg("borrow from", Thread.current)
+        let resource = try last ?? borrower()
+        defer {
+            //dbg(Pool.self, "borrowing", last == nil ? "new" : "pooled", "item", pool.count)
+
+            // …then issue a shrink after a delay
+            if let preferredPoolSize = preferredPoolSize {
+                scheduleShrinkTimer(to: preferredPoolSize)
+            }
+
+            lockQueue.sync {
+//                if pool.count > ProcessInfo.processInfo.activeProcessorCount {
+//                    // debugging why the pool would ever grow beyond the number of cores
+//                    dbg("pool too big", pool.count)
+//                }
+                pool.append(resource)
+            }
+        }
+        return try f(resource)
+    }
+
+    func scheduleShrinkTimer(to size: Int) {
+        let currentSize = lockQueue.sync { self.pool.count }
+        if currentSize <= size { return }
+
+        shrinkWorkLock.sync {
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + poolShrinkDelay, reschedule: &shrinkWork) { [weak self] in
+                self?.shrink(to: currentSize - 1)
+                self?.scheduleShrinkTimer(to: size) // continue shriking
+            }
+        }
+    }
+
+    /// Shrink the pool down to the given size
+    public func shrink(to size: Int) {
+        lockQueue.sync {
+            let poolCount = pool.count
+            let remove = poolCount - size
+            if remove > 0 {
+                // checking the memory would be nice, but expensive pool objects like JSContext seem to take a little while before their memory cleanup becomes visible
+                //let preMemory = currentMemoryMB() ?? 0
+                pool.removeLast(remove)
+                //let postMemory = currentMemoryMB() ?? 0
+                //dbg(Pool.self, "shrunk pool from", poolCount, "→", pool.count) // , (postMemory - preMemory))
+            }
+        }
+    }
+
+    /// Remove all elements of the pool
+    public func clear() {
+        self.shrink(to: 0)
+    }
+}
