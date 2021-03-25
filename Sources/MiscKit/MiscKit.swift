@@ -1,5 +1,5 @@
 // Various misc utilities
-// Marc Prud'hommeaux, 2014-20201
+// Marc Prud'hommeaux, 2014-2021
 
 import Foundation
 
@@ -40,6 +40,7 @@ import OSLog
         #if canImport(OSLog)
         os_log(level == 0 ? .default : level == 1 ? .debug : level == 2 ? .info : level == 3 ? .error : .fault, "%{public}@", message)
         #else
+        debugPrint(message) // fall back to good-old-fashioned printf
         #endif
     }
 }
