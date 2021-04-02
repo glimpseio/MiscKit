@@ -66,7 +66,6 @@ class MiscKitTests : XCTestCase {
         try roundTrip(xml: "<x y='123'>z</x>", quote: "'")
         try roundTrip(xml: "<x y='ABC'> z </x>", quote: "'")
         try roundTrip(xml: "<x y='AB\\C'> z </x>", quote: "'")
-        try roundTrip(xml: "<x y='123'> z <q:a><![CDATA[111]]><r><s></s><!-- COMMENT --></r></q:a> </x>", quote: "'")
         try roundTrip(xml: "<俄语 լեզու='ռուսերեն'>данные</俄语>", quote: "'")
 
         // https://www.w3.org/XML/Test/
@@ -91,6 +90,7 @@ class MiscKitTests : XCTestCase {
             try roundTrip(xml: "<doc><?pi some data ?><?x?></doc>")
             // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/016.xml?rev=1.1.1.1
             try roundTrip(xml: "<doc><?pi?></doc>")
+            try roundTrip(xml: "<x y='123'> z <q:a><![CDATA[111]]><r><s></s><!-- COMMENT --></r></q:a> </x>", quote: "'")
         }
 
         // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/009.xml?rev=1.1.1.1
