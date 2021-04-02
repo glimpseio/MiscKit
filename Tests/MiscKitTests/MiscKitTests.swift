@@ -134,6 +134,18 @@ class MiscKitTests : XCTestCase {
         //try roundTrip(xml: "<doc a1=\"foo\nbar\"></doc>")
     }
 
+    func testXMLTree() throws {
+        let parse = { try XMLTree.parse(data: ($0 as String).data(using: .utf8) ?? Data()).elementChildren.first }
+
+        XCTAssertEqual([:], try parse("<foo><bar>1</bar></foo>")?.elementDictionary(attributes: true, childNodes: false))
+
+        XCTAssertEqual(["bar":"1"], try parse("<foo><bar>1</bar></foo>")?.elementDictionary(attributes: false, childNodes: true))
+
+        XCTAssertEqual(["attr":"false"], try parse("<foo attr=\"false\"><bar>1</bar></foo>")?.elementDictionary(attributes: true, childNodes: false))
+
+        XCTAssertEqual(["attr":"false", "bar": "1"], try parse("<foo attr=\"false\"><bar>1</bar></foo>")?.elementDictionary(attributes: true, childNodes: true))
+    }
+
     #if canImport(Compression)
     @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     func testCompression() throws {

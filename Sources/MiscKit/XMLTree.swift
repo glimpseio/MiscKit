@@ -307,6 +307,54 @@ public struct XMLTree : Hashable {
 //    }
 }
 
+
+/// Utilities for XMLTree
+@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public extension XMLTree {
+    /// Returns all the elements with the given name
+    func elements(named name: String, deep: Bool) -> [Self] {
+        (deep ? flattenedElements : elementChildren).filter { $0.elementName == name }
+    }
+
+    /// All the raw string content of all children (which may contain blank whitespace elements)
+    var childContent: [String] {
+        self.children.map {
+            if case .content(let str) = $0 { return str }
+            return nil
+        }.compactMap({ $0 })
+    }
+
+    /// Join together all the child content and trim and whitespace
+    var childContentTrimmed: String {
+        childContent.joined().trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Converts the current node into a dictionary of element children names and the trimmed content of their joined string children.
+    /// Note that any non-content children are ignored, so this is not a complete view of the element node.
+    ///
+    /// E.g. the XML:
+    ///
+    /// ```<ob><str>X</string><num>1.2</num></ob>```
+    ///
+    /// will return the dictionary:
+    ///
+    /// ```["str": "X", "num": "1.2"]```
+    func elementDictionary(attributes: Bool, childNodes: Bool) -> [String: String] {
+        var dict: [String: String] = [:]
+        if attributes {
+            for attr in self.attributes {
+                dict[attr.key] = attr.value
+            }
+        }
+        if childNodes {
+            for child in elementChildren {
+                dict[child.elementName] = child.childContentTrimmed
+            }
+        }
+        return dict
+    }
+}
+
 @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 private extension String {
 
