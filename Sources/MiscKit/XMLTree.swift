@@ -156,15 +156,24 @@ public struct XMLTree : Hashable {
         return str
     }
 
-    public static func parse(data: Data) throws -> XMLTree {
+    /// Parses the given `Data` and returns an `XMLTree`
+    public static func parse(data: Data, shouldProcessNamespaces: Bool = true, shouldReportNamespacePrefixes: Bool = true, entityResolver: ((_ name: String, _ systemID: String?) -> (Data?))? = nil) throws -> XMLTree {
         let parser = XMLParser(data: data)
+        parser.shouldProcessNamespaces = shouldProcessNamespaces
+        parser.shouldReportNamespacePrefixes = shouldReportNamespacePrefixes
+
         let delegate = Delegate()
+        if let entityResolver = entityResolver {
+            parser.shouldResolveExternalEntities = true
+            delegate.entityResolver = entityResolver
+        } else {
+            parser.shouldResolveExternalEntities = false
+        }
+
         parser.delegate = delegate
         if parser.parse() == false {
             if let error = parser.parserError {
-                // try data.write(to: URL(fileURLWithPath: NSTemporaryDirectory() + "/error.xml"))
-                // dbg("parser error line", parser.lineNumber, "column", parser.columnNumber, "error", error as NSError)
-                throw error // TODO: include lineNumber & columnNumber in the error
+                throw error
             } else if let parseError = delegate.parseErrors.first {
                 throw parseError
             } else if let validationError = delegate.validationErrors.first {
@@ -185,6 +194,7 @@ public struct XMLTree : Hashable {
         var elements: [XMLTree] = []
         var parseErrors: [Error] = []
         var validationErrors: [Error] = []
+        var entityResolver: (_ name: String, _ systemID: String?) -> (Data?) = { _, _ in nil}
 
         /// Convenience getter/setter for the button of the elements stack
         var currentElement: XMLTree {
@@ -218,11 +228,11 @@ public struct XMLTree : Hashable {
         }
 
         func parser(_ parser: XMLParser, foundAttributeDeclarationWithName attributeName: String, forElement elementName: String, type: String?, defaultValue: String?) {
-            dbg("foundAttributeDeclarationWithName", attributeName, elementName, type, defaultValue)
+            //dbg("foundAttributeDeclarationWithName", attributeName, elementName, type, defaultValue)
         }
 
         func parser(_ parser: XMLParser, foundElementDeclarationWithName elementName: String, model: String) {
-            dbg("foundElementDeclarationWithName", elementName, model)
+            //dbg("foundElementDeclarationWithName", elementName, model)
         }
 
         func parser(_ parser: XMLParser, foundInternalEntityDeclarationWithName name: String, value: String?) {
@@ -262,7 +272,7 @@ public struct XMLTree : Hashable {
         }
 
         func parser(_ parser: XMLParser, resolveExternalEntityName name: String, systemID: String?) -> Data? {
-            return nil
+            entityResolver(name, systemID)
         }
 
         func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
