@@ -134,6 +134,7 @@ class MiscKitTests : XCTestCase {
         //try roundTrip(xml: "<doc a1=\"foo\nbar\"></doc>")
     }
 
+    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     func testXMLTree() throws {
         let parse = { try XMLTree.parse(data: ($0 as String).data(using: .utf8) ?? Data()).elementChildren.first }
 
