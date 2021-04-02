@@ -156,18 +156,29 @@ public struct XMLTree : Hashable {
         return str
     }
 
+    /// Options for configuring the `XMLParser`
+    public struct Options: OptionSet, Hashable {
+        public let rawValue: Int
+
+        public static let resolveExternalEntities  = Self(rawValue: 1 << 0)
+        public static let reportNamespacePrefixes  = Self(rawValue: 1 << 1)
+        public static let processNamespaces        = Self(rawValue: 1 << 2)
+
+        public init(rawValue: Int) {
+            self.rawValue = rawValue
+        }
+    }
+
     /// Parses the given `Data` and returns an `XMLTree`
-    public static func parse(data: Data, shouldProcessNamespaces: Bool = true, shouldReportNamespacePrefixes: Bool = true, entityResolver: ((_ name: String, _ systemID: String?) -> (Data?))? = nil) throws -> XMLTree {
+    public static func parse(data: Data, options: Options = [.resolveExternalEntities, .reportNamespacePrefixes, .processNamespaces], entityResolver: ((_ name: String, _ systemID: String?) -> (Data?))? = nil) throws -> XMLTree {
         let parser = XMLParser(data: data)
-        parser.shouldProcessNamespaces = shouldProcessNamespaces
-        parser.shouldReportNamespacePrefixes = shouldReportNamespacePrefixes
+        parser.shouldProcessNamespaces = options.contains(.processNamespaces)
+        parser.shouldReportNamespacePrefixes = options.contains(.reportNamespacePrefixes)
+        parser.shouldResolveExternalEntities = options.contains(.resolveExternalEntities)
 
         let delegate = Delegate()
         if let entityResolver = entityResolver {
-            parser.shouldResolveExternalEntities = true
             delegate.entityResolver = entityResolver
-        } else {
-            parser.shouldResolveExternalEntities = false
         }
 
         parser.delegate = delegate
@@ -220,26 +231,26 @@ public struct XMLTree : Hashable {
             // we do nothing her because we hold on to the root document
         }
 
-        func parser(_ parser: XMLParser, foundNotationDeclarationWithName name: String, publicID: String?, systemID: String?) {
-        }
-
-
-        func parser(_ parser: XMLParser, foundUnparsedEntityDeclarationWithName name: String, publicID: String?, systemID: String?, notationName: String?) {
-        }
-
-        func parser(_ parser: XMLParser, foundAttributeDeclarationWithName attributeName: String, forElement elementName: String, type: String?, defaultValue: String?) {
-            //dbg("foundAttributeDeclarationWithName", attributeName, elementName, type, defaultValue)
-        }
-
-        func parser(_ parser: XMLParser, foundElementDeclarationWithName elementName: String, model: String) {
-            //dbg("foundElementDeclarationWithName", elementName, model)
-        }
-
-        func parser(_ parser: XMLParser, foundInternalEntityDeclarationWithName name: String, value: String?) {
-        }
-
-        func parser(_ parser: XMLParser, foundExternalEntityDeclarationWithName name: String, publicID: String?, systemID: String?) {
-        }
+//        func parser(_ parser: XMLParser, foundNotationDeclarationWithName name: String, publicID: String?, systemID: String?) {
+//        }
+//
+//
+//        func parser(_ parser: XMLParser, foundUnparsedEntityDeclarationWithName name: String, publicID: String?, systemID: String?, notationName: String?) {
+//        }
+//
+//        func parser(_ parser: XMLParser, foundAttributeDeclarationWithName attributeName: String, forElement elementName: String, type: String?, defaultValue: String?) {
+//            //dbg("foundAttributeDeclarationWithName", attributeName, elementName, type, defaultValue)
+//        }
+//
+//        func parser(_ parser: XMLParser, foundElementDeclarationWithName elementName: String, model: String) {
+//            //dbg("foundElementDeclarationWithName", elementName, model)
+//        }
+//
+//        func parser(_ parser: XMLParser, foundInternalEntityDeclarationWithName name: String, value: String?) {
+//        }
+//
+//        func parser(_ parser: XMLParser, foundExternalEntityDeclarationWithName name: String, publicID: String?, systemID: String?) {
+//        }
 
         func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
             elements.append(XMLTree(elementName: elementName, attributes: attributeDict, children: [], namespaceURI: namespaceURI, qualifiedName: qName))
