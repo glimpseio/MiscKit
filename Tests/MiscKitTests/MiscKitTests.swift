@@ -50,8 +50,8 @@ class MiscKitTests : XCTestCase {
     #if canImport(FoundationXML)
     @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     func testParseXML() throws {
-        #if os(Linux)
-        // any XML with a processing instruction crashes on linux
+        #if !canImport(ObjectiveC)
+        // any XML with a processing instruction crashes on linux & windows (non-ObjC NSXMLParser impl)
         let supportsProcessingInstructions = false
         #else
         let supportsProcessingInstructions = true
