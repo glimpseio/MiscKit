@@ -47,7 +47,6 @@ class MiscKitTests : XCTestCase {
         XCTAssertEqual("XYZ", str)
     }
 
-    #if canImport(FoundationXML)
     @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     func testParseXML() throws {
         #if !canImport(ObjectiveC)
@@ -62,6 +61,13 @@ class MiscKitTests : XCTestCase {
             let xmlString = item.xmlString(declaration: "", quote: quote, compactCloseTags: compactCloseTags)
             XCTAssertEqual(result ?? string, xmlString, line: line)
         }
+
+        /// FIXME: different behavior between NSXMLParser and FoundationXML.XMLParser
+        #if canImport(ObjectiveC)
+        try roundTrip(xml: "<x y='123'> z <a><![CDATA[111]]><r><s></s><!-- COMMENT --></r></a> </x>", quote: "'")
+        #else
+        try roundTrip(xml: "<x y='123'> z <q:a><![CDATA[111]]><r><s></s><!-- COMMENT --></r></q:a> </x>", quote: "'")
+        #endif
 
         try roundTrip(xml: "<x y='123'>z</x>", quote: "'")
         try roundTrip(xml: "<x y='ABC'> z </x>", quote: "'")
@@ -90,7 +96,7 @@ class MiscKitTests : XCTestCase {
             try roundTrip(xml: "<doc><?pi some data ?><?x?></doc>")
             // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/016.xml?rev=1.1.1.1
             try roundTrip(xml: "<doc><?pi?></doc>")
-            try roundTrip(xml: "<x y='123'> z <q:a><![CDATA[111]]><r><s></s><!-- COMMENT --></r></q:a> </x>", quote: "'")
+
         }
 
         // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/009.xml?rev=1.1.1.1
@@ -132,8 +138,39 @@ class MiscKitTests : XCTestCase {
         // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/043.xml?rev=1.1.1.1
         //try roundTrip(xml: "<doc a1=\"foo\nbar\"></doc>")
     }
-    #endif // canImport(FoundationXML)
 
+    #if canImport(Compression)
+    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    func testCompression() throws {
+
+        func roundTrip(string: String, line: UInt = #line) {
+
+            let gzipped = string.data(using: .utf8)?.gzip()
+            let gunzipped = gzipped?.gunzip()
+            XCTAssertEqual(string, String(data: gunzipped ?? .init(), encoding: .utf8), line: line)
+
+            let zipped = string.data(using: .utf8)?.zip()
+            let unzipped = zipped?.unzip()
+            XCTAssertEqual(string, String(data: unzipped ?? .init(), encoding: .utf8), line: line)
+        }
+
+        /// Just make a bunch of random UUIDs
+        func randomString(max: Int = 100) -> String {
+            (1...Int.random(in: 5...max)).map { _ in UUID().uuidString }.joined()
+        }
+
+        measure {
+            roundTrip(string: randomString())
+        }
+
+
+        // execute in parallel
+        let _ = (1...999).qmap { _ in
+            roundTrip(string: randomString())
+        }
+
+    }
+    #endif // canImport(FoundationXML)
 }
 #endif
 
