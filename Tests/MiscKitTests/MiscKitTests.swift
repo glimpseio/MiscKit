@@ -48,6 +48,13 @@ class MiscKitTests : XCTestCase {
     }
 
     func testParseXML() throws {
+        #if os(Linux)
+        // any XML with a processing instruction crashes on linux
+        let supportsProcessingInstructions = false
+        #else
+        let supportsProcessingInstructions = true
+        #endif
+
         func roundTrip(xml string: String, to result: String? = nil, quote: String = "\"", compactCloseTags: Bool = false, line: UInt = #line) throws {
             let item = try XMLTree.parse(data: string.data(using: .utf8) ?? .init())
             let xmlString = item.xmlString(declaration: "", quote: quote, compactCloseTags: compactCloseTags)
@@ -77,8 +84,12 @@ class MiscKitTests : XCTestCase {
         // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/093.xml?rev=1.2
         try roundTrip(xml: "<doc>\n\n</doc>")
 
-        // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/017.xml?rev=1.2
-        try roundTrip(xml: "<doc><?pi some data ?><?x?></doc>")
+        if supportsProcessingInstructions {
+            // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/017.xml?rev=1.2
+            try roundTrip(xml: "<doc><?pi some data ?><?x?></doc>")
+            // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/016.xml?rev=1.1.1.1
+            try roundTrip(xml: "<doc><?pi?></doc>")
+        }
 
         // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/009.xml?rev=1.1.1.1
         try roundTrip(xml: "<doc>&#x20;</doc>", to: "<doc> </doc>")
@@ -97,9 +108,6 @@ class MiscKitTests : XCTestCase {
 
         // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/014.xml?rev=1.1.1.1
         try roundTrip(xml: "<doc abcdefghijklmnopqrstuvwxyz=\"v1\"></doc>")
-
-        // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/016.xml?rev=1.1.1.1
-        try roundTrip(xml: "<doc><?pi?></doc>")
 
         // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/018.xml?rev=1.1.1.1
         try roundTrip(xml: "<doc><![CDATA[<foo>]]></doc>")
