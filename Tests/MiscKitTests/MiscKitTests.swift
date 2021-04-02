@@ -47,6 +47,8 @@ class MiscKitTests : XCTestCase {
         XCTAssertEqual("XYZ", str)
     }
 
+    #if canImport(FoundationXML)
+    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
     func testParseXML() throws {
         #if os(Linux)
         // any XML with a processing instruction crashes on linux
@@ -130,6 +132,7 @@ class MiscKitTests : XCTestCase {
         // https://dev.w3.org/cvsweb/2001/XML-Test-Suite/xmlconf/xmltest/valid/sa/043.xml?rev=1.1.1.1
         //try roundTrip(xml: "<doc a1=\"foo\nbar\"></doc>")
     }
+    #endif // canImport(FoundationXML)
 
 }
 #endif
