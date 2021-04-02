@@ -62,12 +62,7 @@ class MiscKitTests : XCTestCase {
             XCTAssertEqual(result ?? string, xmlString, line: line)
         }
 
-        /// FIXME: different behavior between NSXMLParser and FoundationXML.XMLParser
-        #if canImport(ObjectiveC)
         try roundTrip(xml: "<x y='123'> z <a><![CDATA[111]]><r><s></s><!-- COMMENT --></r></a> </x>", quote: "'")
-        #else
-        try roundTrip(xml: "<x y='123'> z <q:a><![CDATA[111]]><r><s></s><!-- COMMENT --></r></q:a> </x>", quote: "'")
-        #endif
 
         try roundTrip(xml: "<x y='123'>z</x>", quote: "'")
         try roundTrip(xml: "<x y='ABC'> z </x>", quote: "'")
