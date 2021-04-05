@@ -4,14 +4,14 @@ import Dispatch
 import MiscKit
 
 class MiscKitTests : XCTestCase {
-    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testDbg() {
         dbg("test message")
         dbg("test message", "with", "arguments", nil, 1, 2, 3)
     }
 
     #if canImport(OSLog)
-    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testPrf() {
         prf { dbg("block with no message") }
         prf("msg") { dbg("block with autoclosure message") }
@@ -47,7 +47,7 @@ class MiscKitTests : XCTestCase {
         XCTAssertEqual("XYZ", str)
     }
 
-    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testParseXML() throws {
         #if !canImport(ObjectiveC)
         // any XML with a processing instruction crashes on linux & windows (non-ObjC NSXMLParser impl)
@@ -134,7 +134,7 @@ class MiscKitTests : XCTestCase {
         //try roundTrip(xml: "<doc a1=\"foo\nbar\"></doc>")
     }
 
-    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testXMLTree() throws {
         let parse = { try XMLTree.parse(data: ($0 as String).data(using: .utf8) ?? Data()).elementChildren.first }
 
@@ -148,7 +148,7 @@ class MiscKitTests : XCTestCase {
     }
 
     #if canImport(Compression)
-    @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+    @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testCompression() throws {
 
         func roundTrip(string: String, line: UInt = #line) {

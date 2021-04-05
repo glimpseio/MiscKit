@@ -7,7 +7,7 @@ import FoundationXML
 #endif
 
 /// An XML Element Tree.
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 public struct XMLTree : Hashable {
     public struct Entity : OptionSet {
         /// The format's default value.
@@ -320,7 +320,7 @@ public struct XMLTree : Hashable {
 
 
 /// Utilities for XMLTree
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 public extension XMLTree {
     /// Returns all the elements with the given name
     @inlinable func elements(named name: String, deep: Bool) -> [Self] {
@@ -366,7 +366,7 @@ public extension XMLTree {
     }
 }
 
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 internal extension String {
 
     /// Returns the string with the given XML entites escaped; the default does not include single apostrophes

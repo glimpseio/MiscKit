@@ -4,7 +4,7 @@ import Foundation
 
 
 /// Data conveniences around Compression
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 public extension Data {
     enum CompressionAlgorithm : String, CaseIterable, Codable {
         case zlib
@@ -196,7 +196,7 @@ public extension Data {
     }
 }
 
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 public struct Crc32: CustomStringConvertible {
     private static let zLibCrc32: ZLibCrc32FuncPtr? = loadCrc32fromZLib()
 
@@ -283,7 +283,7 @@ public struct Crc32: CustomStringConvertible {
     ]
 }
 
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 public struct Adler32: CustomStringConvertible {
     private static let zLibAdler32: ZLibAdler32FuncPtr? = loadAdler32fromZLib()
 
@@ -339,7 +339,7 @@ public struct Adler32: CustomStringConvertible {
 
 
 
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 fileprivate extension Data {
     func withUnsafeBytes<ResultType, ContentType>(_ body: (UnsafePointer<ContentType>) throws -> ResultType) rethrows -> ResultType {
         return try self.withUnsafeBytes({ (rawBufferPointer: UnsafeRawBufferPointer) -> ResultType in
@@ -348,7 +348,7 @@ fileprivate extension Data {
     }
 }
 
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 fileprivate extension Data.CompressionAlgorithm {
     var lowLevelType: compression_algorithm {
         switch self {
@@ -361,11 +361,11 @@ fileprivate extension Data.CompressionAlgorithm {
 }
 
 
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 fileprivate typealias Config = (operation: compression_stream_operation, algorithm: compression_algorithm)
 
 
-@available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 fileprivate func perform(_ config: Config, source: UnsafePointer<UInt8>, sourceSize: Int, preload: Data = Data()) -> Data? {
     guard config.operation == COMPRESSION_STREAM_ENCODE || sourceSize > 0 else { return nil }
 
