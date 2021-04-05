@@ -178,6 +178,22 @@ class MiscKitTests : XCTestCase {
         }
 
     }
+
+    func testParseCompressedXML() throws {
+        // uncompress and parse a fairly large XML file (~4MB uncompressed)
+        let compressed = try Data(contentsOf: URL(string: "https://www.aviationweather.gov/adds/dataserver_current/current/metars.cache.xml.gz")!)
+        let data = compressed.gunzip() ?? compressed
+
+        // measured [Time, seconds] average: 3.538, relative standard deviation: 1.689%, values: [3.650957, 3.472468, 3.613081, 3.533799, 3.518856, 3.505303, 3.492178, 3.599808, 3.528219, 3.463405], performanceMetricID:com.apple.XCTPerformanceMetric_WallClockTime, baselineName: "", baselineAverage: , maxPercentRegression: 10.000%, maxPercentRelativeStandardDeviation: 10.000%, maxRegression: 0.100, maxStandardDeviation: 0.100
+
+        measure {
+            do {
+                let _ = try XMLTree.parse(data: data)
+            } catch {
+                XCTFail("error: \(error)")
+            }
+        }
+    }
     #endif // canImport(FoundationXML)
 }
 #endif

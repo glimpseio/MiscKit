@@ -35,23 +35,26 @@ public struct XMLTree : Hashable {
     public var qualifiedName: String?
 
     /// This is the document root, which is the only one that permits an empty element name
-    public var isDocument: Bool { return elementName == "" }
+    @inlinable public var isDocument: Bool { return elementName == "" }
 
     /// Returns all the children of this tree that are element nodes
-    public var elementChildren: [XMLTree] {
+    @inlinable public var elementChildren: [XMLTree] {
         return children.compactMap { child in
-            if case .element(let element) = child { return element }
-            return nil
+            if case .element(let element) = child {
+                return element
+            } else {
+                return nil
+            }
         }
     }
 
     /// Returns all the elements in a flattened list
-    public var flattenedElements: [XMLTree] {
+    @inlinable public var flattenedElements: [XMLTree] {
         return self.elementChildren + self.elementChildren.map(\.flattenedElements).joined()
     }
 
     /// The attributes for this element
-    public subscript(attribute name: String) -> String? {
+    @inlinable public subscript(attribute name: String) -> String? {
         get { return attributes[name] }
         set { attributes[name] = newValue }
     }
@@ -75,7 +78,7 @@ public struct XMLTree : Hashable {
     }
 
     /// Appends the given tree as an element child
-    public mutating func append(_ element: XMLTree) {
+    @inlinable public mutating func append(_ element: XMLTree) {
         self.children.append(.element(element))
     }
 
@@ -86,7 +89,7 @@ public struct XMLTree : Hashable {
     ///   - content: the textual content of the element
     ///   - CDATA: whether the text content should be in a CDATA tag (default: false)
     /// - Returns: the appended XMLTree
-    @discardableResult public mutating func addElement(_ elementName: String, attributes: [String: String] = [:] , content: String? = nil, CDATA: Bool = false) -> XMLTree {
+    @discardableResult @inlinable public mutating func addElement(_ elementName: String, attributes: [String: String] = [:] , content: String? = nil, CDATA: Bool = false) -> XMLTree {
         var node = XMLTree(elementName: elementName, attributes: attributes)
         if let content = content {
             if CDATA {
@@ -99,7 +102,7 @@ public struct XMLTree : Hashable {
         return self
     }
 
-    public func xmlString(declaration: String = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", quote: String = "\"", compactCloseTags: Bool = false, escape entities: Entity = [.lt, .amp, .gt], commentScriptCDATA: Bool = false, attributeSorter: ([String: String]) -> [(String, String)] = { Array($0).sorted(by: { $0.0 < $1.0 }) }) -> String {
+    @inlinable public func xmlString(declaration: String = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", quote: String = "\"", compactCloseTags: Bool = false, escape entities: Entity = [.lt, .amp, .gt], commentScriptCDATA: Bool = false, attributeSorter: ([String: String]) -> [(String, String)] = { Array($0).sorted(by: { $0.0 < $1.0 }) }) -> String {
         var str = ""
 
         // when we use single quotes for entites, we escape them; same for double-quotes
@@ -170,7 +173,7 @@ public struct XMLTree : Hashable {
     }
 
     /// Parses the given `Data` and returns an `XMLTree`
-    public static func parse(data: Data, options: Options = [.resolveExternalEntities, .reportNamespacePrefixes, .processNamespaces], entityResolver: ((_ name: String, _ systemID: String?) -> (Data?))? = nil) throws -> XMLTree {
+    @inlinable public static func parse(data: Data, options: Options = [.resolveExternalEntities, .reportNamespacePrefixes, .processNamespaces], entityResolver: ((_ name: String, _ systemID: String?) -> (Data?))? = nil) throws -> XMLTree {
         let parser = XMLParser(data: data)
         parser.shouldProcessNamespaces = options.contains(.processNamespaces)
         parser.shouldReportNamespacePrefixes = options.contains(.reportNamespacePrefixes)
@@ -201,34 +204,42 @@ public struct XMLTree : Hashable {
         return delegate.currentElement
     }
 
-    private class Delegate : NSObject, XMLParserDelegate {
-        var elements: [XMLTree] = []
-        var parseErrors: [Error] = []
-        var validationErrors: [Error] = []
-        var entityResolver: (_ name: String, _ systemID: String?) -> (Data?) = { _, _ in nil}
+    @usableFromInline internal final class Delegate : NSObject, XMLParserDelegate {
+        @usableFromInline var elements: Array<XMLTree> = {
+            var arr = Array<XMLTree>();
+            arr.reserveCapacity(20);
+            return arr
+        }()
+        @usableFromInline var parseErrors: [Error] = []
+        @usableFromInline var validationErrors: [Error] = []
+        @usableFromInline var entityResolver: (_ name: String, _ systemID: String?) -> (Data?) = { _, _ in nil}
+
+        @usableFromInline override init() {
+            super.init()
+        }
 
         /// Convenience getter/setter for the button of the elements stack
-        var currentElement: XMLTree {
+        @usableFromInline var currentElement: XMLTree {
             get {
                 return elements.last!
             }
 
             set {
                 if elements.isEmpty {
-                    elements = [newValue]
+                    elements.append(newValue)
                 } else {
                     elements[elements.count-1] = newValue
                 }
             }
         }
 
-        func parserDidStartDocument(_ parser: XMLParser) {
+        @usableFromInline func parserDidStartDocument(_ parser: XMLParser) {
             // the root document is simply an empty element name
             elements.append(XMLTree(elementName: ""))
         }
 
-        func parserDidEndDocument(_ parser: XMLParser) {
-            // we do nothing her because we hold on to the root document
+        @usableFromInline func parserDidEndDocument(_ parser: XMLParser) {
+            // we do nothing here because we hold on to the root document
         }
 
 //        func parser(_ parser: XMLParser, foundNotationDeclarationWithName name: String, publicID: String?, systemID: String?) {
@@ -252,45 +263,45 @@ public struct XMLTree : Hashable {
 //        func parser(_ parser: XMLParser, foundExternalEntityDeclarationWithName name: String, publicID: String?, systemID: String?) {
 //        }
 
-        func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+        @usableFromInline func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
             elements.append(XMLTree(elementName: elementName, attributes: attributeDict, children: [], namespaceURI: namespaceURI, qualifiedName: qName))
         }
 
-        func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+        @usableFromInline func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
             if let element = elements.popLast() { // remove the last element…
                 currentElement.children.append(.element(element)) // … and add it as a child to the parent
             }
         }
 
-        func parser(_ parser: XMLParser, foundCharacters string: String) {
+        @inlinable func parser(_ parser: XMLParser, foundCharacters string: String) {
             currentElement.children.append(.content(string))
         }
 
-        func parser(_ parser: XMLParser, foundIgnorableWhitespace whitespaceString: String) {
+        @inlinable func parser(_ parser: XMLParser, foundIgnorableWhitespace whitespaceString: String) {
             currentElement.children.append(.whitespace(whitespaceString))
         }
 
-        func parser(_ parser: XMLParser, foundProcessingInstructionWithTarget target: String, data: String?) {
+        @inlinable func parser(_ parser: XMLParser, foundProcessingInstructionWithTarget target: String, data: String?) {
             currentElement.children.append(.processingInstruction(target: target, data: data))
         }
 
-        func parser(_ parser: XMLParser, foundComment comment: String) {
+        @inlinable func parser(_ parser: XMLParser, foundComment comment: String) {
             currentElement.children.append(.comment(comment))
         }
 
-        func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
+        @inlinable func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
             currentElement.children.append(.cdata(CDATABlock))
         }
 
-        func parser(_ parser: XMLParser, resolveExternalEntityName name: String, systemID: String?) -> Data? {
+        @inlinable func parser(_ parser: XMLParser, resolveExternalEntityName name: String, systemID: String?) -> Data? {
             entityResolver(name, systemID)
         }
 
-        func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
+        @inlinable func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
             parseErrors.append(parseError)
         }
 
-        func parser(_ parser: XMLParser, validationErrorOccurred validationError: Error) {
+        @inlinable func parser(_ parser: XMLParser, validationErrorOccurred validationError: Error) {
             validationErrors.append(validationError)
         }
     }
@@ -312,12 +323,12 @@ public struct XMLTree : Hashable {
 @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
 public extension XMLTree {
     /// Returns all the elements with the given name
-    func elements(named name: String, deep: Bool) -> [Self] {
+    @inlinable func elements(named name: String, deep: Bool) -> [Self] {
         (deep ? flattenedElements : elementChildren).filter { $0.elementName == name }
     }
 
     /// All the raw string content of all children (which may contain blank whitespace elements)
-    var childContent: [String] {
+    @inlinable var childContent: [String] {
         self.children.map {
             if case .content(let str) = $0 { return str }
             return nil
@@ -325,7 +336,7 @@ public extension XMLTree {
     }
 
     /// Join together all the child content and trim and whitespace
-    var childContentTrimmed: String {
+    @inlinable var childContentTrimmed: String {
         childContent.joined().trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
@@ -339,7 +350,7 @@ public extension XMLTree {
     /// will return the dictionary:
     ///
     /// ```["str": "X", "num": "1.2"]```
-    func elementDictionary(attributes: Bool, childNodes: Bool) -> [String: String] {
+    @inlinable func elementDictionary(attributes: Bool, childNodes: Bool) -> [String: String] {
         var dict: [String: String] = [:]
         if attributes {
             for attr in self.attributes {
@@ -356,10 +367,10 @@ public extension XMLTree {
 }
 
 @available(macOS 10.14, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
-private extension String {
+internal extension String {
 
     /// Returns the string with the given XML entites escaped; the default does not include single apostrophes
-    func escapedXMLEntities(_ entities: XMLTree.Entity) -> String {
+    @inlinable func escapedXMLEntities(_ entities: XMLTree.Entity) -> String {
         var str = ""
         str.reserveCapacity(self.count)
         let lt = entities.contains(.lt)
