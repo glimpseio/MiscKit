@@ -65,7 +65,7 @@ import OSLog
 #if canImport(OSLog)
 import OSLog
 
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 @usableFromInline let signpostLog = OSLog(subsystem: "net.misckit.MiscKit.prf", category: .pointsOfInterest)
 
 /// Output a message with the amount of time the given block took to exeucte
@@ -75,7 +75,7 @@ import OSLog
 /// - Parameter fileName: the fileName containg the calling function
 /// - Parameter lineNumber: the line on which the function was called
 /// - Parameter block: the block to execute
-@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 @inlinable public func prf<T>(_ message: @autoclosure () -> String? = nil, msg messageBlock: ((T) -> String)? = nil, threshold: Double = -0.0, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line, block: () throws -> T) rethrows -> T {
     //#if DEBUG
 

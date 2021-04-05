@@ -205,11 +205,7 @@ public struct XMLTree : Hashable {
     }
 
     @usableFromInline internal final class Delegate : NSObject, XMLParserDelegate {
-        @usableFromInline var elements: Array<XMLTree> = {
-            var arr = Array<XMLTree>();
-            arr.reserveCapacity(20);
-            return arr
-        }()
+        @usableFromInline var elements = Array<XMLTree>()
         @usableFromInline var parseErrors: [Error] = []
         @usableFromInline var validationErrors: [Error] = []
         @usableFromInline var entityResolver: (_ name: String, _ systemID: String?) -> (Data?) = { _, _ in nil}
