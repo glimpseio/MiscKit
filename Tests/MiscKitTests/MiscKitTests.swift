@@ -176,9 +176,9 @@ class MiscKitTests : XCTestCase {
         let _ = (1...999).qmap { _ in
             roundTrip(string: randomString())
         }
-
     }
 
+    @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testParseCompressedXML() throws {
         // uncompress and parse a fairly large XML file (~4MB uncompressed)
         let compressed = try Data(contentsOf: URL(string: "https://www.aviationweather.gov/adds/dataserver_current/current/metars.cache.xml.gz")!)
