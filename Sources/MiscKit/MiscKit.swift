@@ -161,6 +161,24 @@ import OSLog
 }
 #endif
 
+extension Sequence {
+    /// Returns this sequence sorted by the given keypath of the element, either
+    /// forwards (the default) or backwards.
+    @inlinable public func sorting<T: Comparable>(by keyPath: KeyPath<Element, T>, forward: Bool = true) -> [Element] {
+        sorted(by: { forward ? ($0[keyPath: keyPath] < $1[keyPath: keyPath]) : ($0[keyPath: keyPath] > $1[keyPath: keyPath]) })
+    }
+}
+
+extension Collection where Self.Index : Strideable {
+    /// Sub-divide the given collection into sub-collections
+    @inlinable public func subdivided(into size: Index.Stride) -> [SubSequence] {
+        stride(from: startIndex, to: endIndex, by: size).map { i in
+            self[i..<Swift.min(i.advanced(by: size), endIndex)]
+        }
+    }
+}
+
+
 #if canImport(Dispatch)
 extension Collection {
     /// Executes the given block concurrently using `DispatchQueue.concurrentPerform`, returning the array of results

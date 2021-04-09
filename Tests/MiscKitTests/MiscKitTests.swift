@@ -35,6 +35,14 @@ class MiscKitTests : XCTestCase {
     }
     #endif
 
+    func testSorting() {
+        XCTAssertEqual(["A", "B", "C"], Set(["A", "B", "C"]).sorting(by: \.self))
+    }
+
+    func testSubdivide() {
+        XCTAssertEqual([[1, 2], [3, 4], [5]], [1, 2, 3, 4, 5].subdivided(into: 2))
+    }
+
     func testErr() {
         XCTAssertThrowsError(try { throw err("X") }())
     }
