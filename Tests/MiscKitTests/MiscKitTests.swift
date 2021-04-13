@@ -181,7 +181,7 @@ class MiscKitTests : XCTestCase {
 
 
         // execute in parallel
-        let _ = (1...999).qmap { _ in
+        _ = (1...999).qmap { _ in
             roundTrip(string: randomString())
         }
     }
@@ -196,7 +196,7 @@ class MiscKitTests : XCTestCase {
 
         measure {
             do {
-                let _ = try XMLTree.parse(data: data)
+                _ = try XMLTree.parse(data: data)
             } catch {
                 XCTFail("error: \(error)")
             }
