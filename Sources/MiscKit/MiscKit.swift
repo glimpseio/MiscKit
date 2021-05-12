@@ -8,6 +8,87 @@ import Foundation
 @discardableResult @inlinable public func wip<T>(_ value: T) -> T { value }
 
 
+/// The equivalent of `Sequence.reduce` for trees.
+/// - Parameters:
+///   - root: the root element of the tree
+///   - initialResult: the initial result
+///   - depthFirst: whether the traverse depth-first or breadth-first
+///   - children: the closure to obtain children for a parent
+///   - nextPartialResult: the reduction function; returning nil will halt evaluation and return the current result
+/// - Throws: an error if either the `children` or `nextPartialResult` closures throw an errpr
+/// - Returns: the result as constructed from a traversal of the tree up to the point that `nextPartialResult` returns `nil`
+@inlinable public func treeduce<T, U, S: Collection>(root: T, initialResult: U, depthFirst: Bool, children: (T) throws -> S, nextPartialResult: (U, T) throws -> U?) rethrows -> U where S.Element == T {
+    var pending = [root]
+    var result = initialResult
+    while !pending.isEmpty {
+        let node = pending.removeFirst()
+
+        // returning nil from the transform indicates that we should end the traversal
+        guard let nextResult = try nextPartialResult(result, node) else {
+            return result
+        }
+
+        result = nextResult
+
+        if depthFirst {
+            pending.insert(contentsOf: try children(node), at: 0)
+        } else {
+            pending.append(contentsOf: try children(node))
+        }
+    }
+
+    return result
+}
+
+/// Iterates through the tree and returns a count of all the elements
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
+///   - children: the closure for obtaining the child elements
+/// - Returns: the total count of all the nodes in the tree
+@inlinable public func treecount<T, S: Collection>(root: T, depthFirst: Bool = true, children: (T) -> S) -> Int where S.Element == T {
+    // this could be implemented much less efficiently with the following:
+    //return treegather(root: root, depthFirst: depthFirst, children: children).count
+    treeduce(root: root, initialResult: 0, depthFirst: depthFirst, children: children) { count, element in
+        count + 1
+    }
+}
+
+/// Iterates through the tree and builds an array of all the nodes that pass the given `predicate` filter
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
+///   - children: the closure for obtaining the child elements
+/// - Returns: all the elements of the tree
+@inlinable public func treefilter<T, S: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> S, predicate: (T) throws -> Bool) rethrows -> [T] where S.Element == T {
+    try treeduce(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, element in
+        try predicate(element) ? array + [element] : array
+    }
+}
+
+/// Iterates through the tree and returns the first element that matches the given preficate
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
+///   - children: the closure for obtaining the child elements
+///   - predicate: the predicate
+/// - Returns: all the elements of the tree
+@inlinable public func treefirst<T, S: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> S, predicate: (T) throws -> Bool) rethrows -> T? where S.Element == T {
+    var match: T? = nil // track whether
+    return try treeduce(root: root, initialResult: match, depthFirst: depthFirst, children: children) { _, element in
+        if match != nil {
+            return nil // we found a match
+        }
+
+        if try predicate(element) == true {
+            match = element
+        }
+
+        return element
+    }
+}
+
+
 #if canImport(OSLog)
 import OSLog
 #endif
