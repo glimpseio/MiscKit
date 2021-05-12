@@ -245,9 +245,7 @@ class MiscKitTests : XCTestCase {
                 Array(repeating: SplayTree(level: level + 1, maxLevel: maxLevel), count: .init(level > maxLevel ? 0 : (level + 1)))
             }
         }
-
     }
-
 }
 #endif
 
