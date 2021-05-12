@@ -15,25 +15,30 @@ import Foundation
 ///   - depthFirst: whether the traverse depth-first or breadth-first
 ///   - children: the closure to obtain children for a parent
 ///   - nextPartialResult: the reduction function; returning nil will halt evaluation and return the current result
-/// - Throws: an error if either the `children` or `nextPartialResult` closures throw an errpr
+/// - Throws: an error if either the `children` or `nextPartialResult` closures throw an error
 /// - Returns: the result as constructed from a traversal of the tree up to the point that `nextPartialResult` returns `nil`
-@inlinable public func treeduce<T, U, S: Collection>(root: T, initialResult: U, depthFirst: Bool, children: (T) throws -> S, nextPartialResult: (U, T) throws -> U?) rethrows -> U where S.Element == T {
-    var pending = [root]
+@inlinable public func treeduce<T, U, C: Collection>(root: T, initialResult: U, depthFirst: Bool, children: (T) throws -> C, nextPartialResult: (U, (IndexPath, T)) throws -> U?) rethrows -> U where C.Element == T {
+    var pending = [(IndexPath(), root)]
+
     var result = initialResult
     while !pending.isEmpty {
-        let node = pending.removeFirst()
+        let (index, node) = pending.removeFirst()
 
         // returning nil from the transform indicates that we should end the traversal
-        guard let nextResult = try nextPartialResult(result, node) else {
+        guard let nextResult = try nextPartialResult(result, (index, node)) else {
             return result
         }
 
         result = nextResult
 
+        let indexedChildren = try children(node).enumerated().map { childIndex, childNode in
+            (index.appending(childIndex), childNode)
+        }
+
         if depthFirst {
-            pending.insert(contentsOf: try children(node), at: 0)
+            pending.insert(contentsOf: indexedChildren, at: pending.startIndex)
         } else {
-            pending.append(contentsOf: try children(node))
+            pending.append(contentsOf: indexedChildren)
         }
     }
 
@@ -46,12 +51,10 @@ import Foundation
 ///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
 ///   - children: the closure for obtaining the child elements
 /// - Returns: the total count of all the nodes in the tree
-@inlinable public func treecount<T, S: Collection>(root: T, depthFirst: Bool = true, children: (T) -> S) -> Int where S.Element == T {
+@inlinable public func treecount<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) -> C) -> Int where C.Element == T {
     // this could be implemented much less efficiently with the following:
     //return treegather(root: root, depthFirst: depthFirst, children: children).count
-    treeduce(root: root, initialResult: 0, depthFirst: depthFirst, children: children) { count, element in
-        count + 1
-    }
+    treeduce(root: root, initialResult: 0, depthFirst: depthFirst, children: children, nextPartialResult: { count, _ in count + 1 })
 }
 
 /// Iterates through the tree and builds an array of all the nodes that pass the given `predicate` filter
@@ -60,9 +63,9 @@ import Foundation
 ///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
 ///   - children: the closure for obtaining the child elements
 /// - Returns: all the elements of the tree
-@inlinable public func treefilter<T, S: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> S, predicate: (T) throws -> Bool) rethrows -> [T] where S.Element == T {
-    try treeduce(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, element in
-        try predicate(element) ? array + [element] : array
+@inlinable public func treefilter<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, predicate: (T) throws -> Bool) rethrows -> [T] where C.Element == T {
+    try treeduce(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, indexElement in
+        try predicate(indexElement.1) ? array + [indexElement.1] : array
     }
 }
 
@@ -73,18 +76,18 @@ import Foundation
 ///   - children: the closure for obtaining the child elements
 ///   - predicate: the predicate
 /// - Returns: all the elements of the tree
-@inlinable public func treefirst<T, S: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> S, predicate: (T) throws -> Bool) rethrows -> T? where S.Element == T {
-    var match: T? = nil // track whether
-    return try treeduce(root: root, initialResult: match, depthFirst: depthFirst, children: children) { _, element in
+@inlinable public func treefirst<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, predicate: (T) throws -> Bool) rethrows -> T? where C.Element == T {
+    var match: T? = nil // track whether the matched element was found
+    return try treeduce(root: root, initialResult: match, depthFirst: depthFirst, children: children) { _, indexElement in
         if match != nil {
             return nil // we found a match
         }
 
-        if try predicate(element) == true {
-            match = element
+        if try predicate(indexElement.1) == true {
+            match = indexElement.1
         }
 
-        return element
+        return indexElement.1
     }
 }
 

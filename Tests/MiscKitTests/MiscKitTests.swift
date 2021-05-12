@@ -203,6 +203,51 @@ class MiscKitTests : XCTestCase {
         }
     }
     #endif // canImport(FoundationXML)
+
+    func testTreeduce() throws {
+        let (depth, count) = (7, 46_233)
+        //let (depth, count) = (8, 409_113) // count depthFirst: 379ms (1899ms un-optimized)
+
+        //let (depth, count) = (9, 4_037_913)
+
+        let stree = SplayTree(level: 1, maxLevel: .init(depth))
+
+        // sanity check & `treefilter` test
+        if count < 8 { // otherwise it takes forever!
+            XCTAssertEqual(count, treefilter(root: stree, children: \.children, predicate: { _ in true }).count)
+        }
+
+        measure {
+            let qlevel = treefirst(root: stree, children: \.children, predicate: { $0.level == depth })
+            XCTAssertEqual(.init(depth), qlevel?.level)
+        }
+
+        for depthFirst in [true] {
+            XCTAssertEqual(count, prf("treecount(depthFirst: \(depthFirst))") {
+                treecount(root: stree, depthFirst: depthFirst, children: \.children)
+            })
+        }
+
+        /// A tree that has `level` children all the way down to the maximum level
+        struct SplayTree {
+            static let infinite = SplayTree(level: 1)
+            static let empty = repeatElement(SplayTree(level: .max), count: 0)
+
+            let level: UInt64
+            let maxLevel: UInt64
+
+            public init(level: UInt64, maxLevel: UInt64 = .max) {
+                self.level = level
+                self.maxLevel = maxLevel
+            }
+
+            var children: [SplayTree] {
+                Array(repeating: SplayTree(level: level + 1, maxLevel: maxLevel), count: .init(level > maxLevel ? 0 : (level + 1)))
+            }
+        }
+
+    }
+
 }
 #endif
 
