@@ -202,6 +202,7 @@ class MiscKitTests : XCTestCase {
     }
     #endif // canImport(FoundationXML)
 
+    @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testTreeduce() throws {
         let (depth, count) = (7, 46_233)
         //let (depth, count) = (8, 409_113) // count depthFirst: 379ms (1899ms un-optimized)
