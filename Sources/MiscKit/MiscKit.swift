@@ -153,6 +153,9 @@ import OSLog
     return v
 }
 
+
+// MARK: Timing Utilities
+
 #if canImport(OSLog)
 import OSLog
 
@@ -191,6 +194,16 @@ import OSLog
     return result
 }
 
+
+
+@inlinable public func timeInMS(_ from: Double, to: Double = Date().timeIntervalSinceReferenceDate) -> String {
+    return "\(Int64(round((to - from) * 1000)))ms"
+}
+
+@inlinable public func timeInMS(fromDate from: Date, to: Date = Date()) -> String {
+    timeInMS(from.timeIntervalSinceReferenceDate, to: to.timeIntervalSinceReferenceDate)
+}
+
 #if canImport(Dispatch)
 /// Returns the current nanoseconds (from an arbitrary base). This may be coarse or fine-grained, and is not guaranteed to be monotonically increasing.
 @inlinable public func nanos() -> UInt64 {
@@ -199,14 +212,6 @@ import OSLog
     // clock_gettime_nsec_np(CLOCK_UPTIME_RAW) // like “CLOCK_MONOTONIC_RAW, but that does not increment while the system is asleep”
     //mach_approximate_time() // use the approximate time to save a few cycles
     DispatchTime.now().uptimeNanoseconds
-}
-
-@inlinable public func timeInMS(_ from: CFAbsoluteTime, to: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()) -> String {
-    return "\(Int64(round((to - from) * 1000)))ms"
-}
-
-@inlinable public func timeInMS(fromDate from: Date, to: Date = Date()) -> String {
-    timeInMS(from.timeIntervalSinceReferenceDate, to: to.timeIntervalSinceReferenceDate)
 }
 
 /// Returns a description of the number of nanoseconds that have elapsed between `from` and `to`.
