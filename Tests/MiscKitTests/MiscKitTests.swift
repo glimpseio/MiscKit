@@ -10,14 +10,12 @@ class MiscKitTests : XCTestCase {
         dbg("test message", "with", "arguments", nil, 1, 2, 3)
     }
 
-    #if canImport(OSLog)
     @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testPrf() {
         prf { dbg("block with no message") }
         prf("msg") { dbg("block with autoclosure message") }
         let _: Double = prf(msg: { "closure value message: \($0)" }) { 1.23}
     }
-    #endif
     
     func testLoc() {
         XCTAssertEqual("1,234,567.890000", locfmt("%f", 1234567.890))

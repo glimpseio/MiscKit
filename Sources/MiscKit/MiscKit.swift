@@ -153,21 +153,12 @@ import OSLog
     return v
 }
 
-#if canImport(Darwin)
-/// Returns the current nanoseconds (from an arbitrary base). This may be coarse or fine-grained, and is not guaranteed to be monotonically increasing.
-@inlinable public func nanos() -> UInt64 {
-    // mach_absolute_time() // don't use this, because it doesn't return nanoseconds under ARM
-    // clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)
-    // clock_gettime_nsec_np(CLOCK_UPTIME_RAW) // like “CLOCK_MONOTONIC_RAW, but that does not increment while the system is asleep”
-    mach_approximate_time() // use the approximate time to save a few cycles
-}
-#endif
-
 #if canImport(OSLog)
 import OSLog
 
 @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 @usableFromInline let signpostLog = OSLog(subsystem: "net.misckit.MiscKit.prf", category: .pointsOfInterest)
+#endif
 
 /// Output a message with the amount of time the given block took to exeucte
 /// - Parameter msg: the message prefix closure accepting the result of the `block`
@@ -182,8 +173,11 @@ import OSLog
 
     let start: UInt64 = nanos()
 
+    #if canImport(OSLog)
     os_signpost(.begin, log: signpostLog, name: functionName)
     defer { os_signpost(.end, log: signpostLog, name: functionName) }
+    #endif
+
     let result = try block()
 
     let end: UInt64 = max(nanos(), start)
@@ -192,16 +186,23 @@ import OSLog
     if secs >= threshold {
         let timeStr = timeInMS(fromNanos: start, to: end)
 
+        #if canImport(OSLog)
         dbg(message(), messageBlock?(result), "time: \(timeStr)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+        #else
+        print(message(), messageBlock?(result), "time: \(timeStr)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+        #endif
     }
     return result
-    //#else
-    //return try block()
-    //#endif
 }
-#endif
 
 #if canImport(Darwin)
+/// Returns the current nanoseconds (from an arbitrary base). This may be coarse or fine-grained, and is not guaranteed to be monotonically increasing.
+@inlinable public func nanos() -> UInt64 {
+    // mach_absolute_time() // don't use this, because it doesn't return nanoseconds under ARM
+    // clock_gettime_nsec_np(CLOCK_MONOTONIC_RAW)
+    // clock_gettime_nsec_np(CLOCK_UPTIME_RAW) // like “CLOCK_MONOTONIC_RAW, but that does not increment while the system is asleep”
+    mach_approximate_time() // use the approximate time to save a few cycles
+}
 
 @inlinable public func timeInMS(_ from: CFAbsoluteTime, to: CFAbsoluteTime = CFAbsoluteTimeGetCurrent()) -> String {
     return "\(Int64(round((to - from) * 1000)))ms"
