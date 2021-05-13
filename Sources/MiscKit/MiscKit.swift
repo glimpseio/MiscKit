@@ -45,7 +45,22 @@ import Foundation
     return result
 }
 
+/// Returns an enumeration of all the elements of the tree zipped with their `IndexPath`.
+///
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
+///   - children: the closure for obtaining the child elements
+///
+/// - Returns: the enumerated elements of the tree
+@inlinable public func treenumerate<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C) rethrows -> [(index: IndexPath, element: T)] where C.Element == T {
+    try treeduce(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, indexElement in
+        array + [indexElement]
+    }
+}
+
 /// Iterates through the tree and returns a count of all the elements
+///
 /// - Parameters:
 ///   - root: the root of the tree
 ///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
@@ -58,6 +73,7 @@ import Foundation
 }
 
 /// Iterates through the tree and builds an array of all the nodes that pass the given `predicate` filter
+///
 /// - Parameters:
 ///   - root: the root of the tree
 ///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
@@ -69,7 +85,8 @@ import Foundation
     }
 }
 
-/// Iterates through the tree and returns the first element that matches the given preficate
+/// Iterates through the tree and returns the first element that matches the given predicate
+///
 /// - Parameters:
 ///   - root: the root of the tree
 ///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
