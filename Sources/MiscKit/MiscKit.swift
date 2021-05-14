@@ -8,7 +8,121 @@ import Foundation
 @discardableResult @inlinable public func wip<T>(_ value: T) -> T { value }
 
 
-/// The equivalent of `Sequence.reduce` for trees.
+/// The equivalent of `Sequence.reduce` for trees, including `IndexPath` to elements.
+/// - Parameters:
+///   - root: the root element of the tree
+///   - initialResult: the initial result
+///   - depthFirst: whether the traverse depth-first or breadth-first
+///   - children: the closure to obtain children for a parent
+///   - nextPartialResult: the reduction function; assigning false to the initial `keepGoing` field will halt evaluation and return the current result
+/// - Throws: an error if either the `children` or `nextPartialResult` closures throw an error
+/// - Returns: the result as constructed from a traversal of the tree up to the point that `nextPartialResult` returns `nil`
+///
+/// - SeeAlso: treeduceIndexed
+@inlinable public func treeduce<T, U, C: RangeReplaceableCollection>(root: T, initialResult: U, depthFirst: Bool, children: (T) throws -> C, nextPartialResult: (inout Bool, U, T) throws -> U) rethrows -> U where C.Element == T {
+    var pending = [root]
+    var pendingCount = 1
+
+    // beware attempts to simplify this; small changes can bring the `testTreePerformance` numbers up considerably. Current best-performance on the 8-level SplayTree test counts over 409_113 nodes is 15ms in an optimized build
+    var result = initialResult
+    while pendingCount > 0 {
+        let node = pending.removeFirst()
+
+        // returning nil from the transform indicates that we should end the traversal
+        var keepGoing = true
+        result = try nextPartialResult(&keepGoing, result, node)
+        if keepGoing == false { return result } // the closure said to stop
+
+        let childNodes = try children(node)
+        let childCount = childNodes.count
+        pendingCount = pendingCount + childCount - 1 // minus one for the removeFirst
+        if childCount > 0 {
+            pending.insert(contentsOf: childNodes, at: depthFirst ? pending.startIndex : pending.endIndex)
+        }
+    }
+
+    return result
+}
+
+
+/// Maps each element of the tree with the given function
+///
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
+///   - children: the closure for obtaining the child elements
+///   - transform: the transform function to perform on each element
+///
+/// - Returns: the enumerated elements of the tree
+/// - Throws: any error that the `children` or `transform` functions throw
+/// - SeeAlso: treemapIndexed
+@inlinable public func treemap<T, U, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, transform: (T) throws -> U) rethrows -> [U] where C.Element == T {
+    try treemapIndexed(root: root, depthFirst: depthFirst, children: children) { index, element in
+        try transform(element)
+    }
+}
+
+/// Returns an enumeration of all the elements of the tree zipped with their `IndexPath`.
+///
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
+///   - children: the closure for obtaining the child elements
+///
+/// - Returns: the enumerated elements of the tree
+@inlinable public func treenumerate<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C) rethrows -> [(index: IndexPath, element: T)] where C.Element == T {
+    try treemapIndexed(root: root, depthFirst: depthFirst, children: children) { index, element in
+        (index: index, element: element)
+    }
+}
+
+/// Iterates through the tree and returns a count of all the elements
+///
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
+///   - children: the closure for obtaining the child elements
+/// - Returns: the total count of all the nodes in the tree
+@inlinable public func treecount<T, C: RangeReplaceableCollection>(root: T, depthFirst: Bool = true, children: (T) -> C) -> Int where C.Element == T {
+    // this could be implemented much less efficiently with the following:
+    //return treegather(root: root, depthFirst: depthFirst, children: children).count
+    treeduce(root: root, initialResult: 0, depthFirst: depthFirst, children: children, nextPartialResult: { _, count, _ in count + 1 })
+}
+
+/// Iterates through the tree and builds an array of all the nodes that pass the given `predicate` filter
+///
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
+///   - children: the closure for obtaining the child elements
+/// - Returns: all the elements of the tree
+@inlinable public func treefilter<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, predicate: (T) throws -> Bool) rethrows -> [T] where C.Element == T {
+    try treeduceIndexed(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, indexElement in
+        try predicate(indexElement.1) ? array + [indexElement.1] : array
+    }
+}
+
+/// Iterates through the tree and returns the first element that matches the given predicate
+///
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
+///   - children: the closure for obtaining the child elements
+///   - predicate: the predicate
+/// - Returns: all the elements of the tree
+@inlinable public func treefirst<T, C: RangeReplaceableCollection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, predicate: (T) throws -> Bool) rethrows -> T? where C.Element == T {
+    try treeduce(root: root, initialResult: T?.none, depthFirst: depthFirst, children: children) { keepGoing, result, element in
+        if try predicate(element) == true {
+            keepGoing = false // stop after the first match
+            return element
+        } else {
+            return T?.none
+        }
+    }
+}
+
+
+/// The equivalent of `Sequence.reduce` for trees, including `IndexPath` to elements.
 /// - Parameters:
 ///   - root: the root element of the tree
 ///   - initialResult: the initial result
@@ -17,7 +131,9 @@ import Foundation
 ///   - nextPartialResult: the reduction function; returning nil will halt evaluation and return the current result
 /// - Throws: an error if either the `children` or `nextPartialResult` closures throw an error
 /// - Returns: the result as constructed from a traversal of the tree up to the point that `nextPartialResult` returns `nil`
-@inlinable public func treeduce<T, U, C: Collection>(root: T, initialResult: U, depthFirst: Bool, children: (T) throws -> C, nextPartialResult: (U, (IndexPath, T)) throws -> U?) rethrows -> U where C.Element == T {
+///
+/// - Note: if the `IndexPath` of the tree element is not needed, then it is more efficient to use `treeduce`, which just maps over the elements
+@inlinable public func treeduceIndexed<T, U, C: Collection>(root: T, initialResult: U, depthFirst: Bool, children: (T) throws -> C, nextPartialResult: (U, (IndexPath, T)) throws -> U?) rethrows -> U where C.Element == T {
     var pending = [(IndexPath(), root)]
 
     var result = initialResult
@@ -56,91 +172,12 @@ import Foundation
 /// - Returns: the enumerated elements of the tree
 /// - Throws: any error that the `children` or `transform` functions throw
 /// - SeeAlso: treemap
-@inlinable public func treemapindexed<T, U, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, transform: (_ index: IndexPath, _ element: T) throws -> U) rethrows -> [U] where C.Element == T {
-    try treeduce(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, indexElement in
+@inlinable public func treemapIndexed<T, U, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, transform: (_ index: IndexPath, _ element: T) throws -> U) rethrows -> [U] where C.Element == T {
+    try treeduceIndexed(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, indexElement in
         array + [try transform(indexElement.0, indexElement.1)]
     }
 }
 
-/// Maps each element of the tree with the given function
-///
-/// - Parameters:
-///   - root: the root of the tree
-///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
-///   - children: the closure for obtaining the child elements
-///   - transform: the transform function to perform on each element
-///
-/// - Returns: the enumerated elements of the tree
-/// - Throws: any error that the `children` or `transform` functions throw
-/// - SeeAlso: treemapindexed
-@inlinable public func treemap<T, U, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, transform: (T) throws -> U) rethrows -> [U] where C.Element == T {
-    try treemapindexed(root: root, depthFirst: depthFirst, children: children) { index, element in
-        try transform(element)
-    }
-}
-
-/// Returns an enumeration of all the elements of the tree zipped with their `IndexPath`.
-///
-/// - Parameters:
-///   - root: the root of the tree
-///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
-///   - children: the closure for obtaining the child elements
-///
-/// - Returns: the enumerated elements of the tree
-@inlinable public func treenumerate<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C) rethrows -> [(index: IndexPath, element: T)] where C.Element == T {
-    try treemapindexed(root: root, depthFirst: depthFirst, children: children) { index, element in
-        (index: index, element: element)
-    }
-}
-
-/// Iterates through the tree and returns a count of all the elements
-///
-/// - Parameters:
-///   - root: the root of the tree
-///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
-///   - children: the closure for obtaining the child elements
-/// - Returns: the total count of all the nodes in the tree
-@inlinable public func treecount<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) -> C) -> Int where C.Element == T {
-    // this could be implemented much less efficiently with the following:
-    //return treegather(root: root, depthFirst: depthFirst, children: children).count
-    treeduce(root: root, initialResult: 0, depthFirst: depthFirst, children: children, nextPartialResult: { count, _ in count + 1 })
-}
-
-/// Iterates through the tree and builds an array of all the nodes that pass the given `predicate` filter
-///
-/// - Parameters:
-///   - root: the root of the tree
-///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
-///   - children: the closure for obtaining the child elements
-/// - Returns: all the elements of the tree
-@inlinable public func treefilter<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, predicate: (T) throws -> Bool) rethrows -> [T] where C.Element == T {
-    try treeduce(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, indexElement in
-        try predicate(indexElement.1) ? array + [indexElement.1] : array
-    }
-}
-
-/// Iterates through the tree and returns the first element that matches the given predicate
-///
-/// - Parameters:
-///   - root: the root of the tree
-///   - depthFirst: whether to traverse depthFirst (the default and the fastest) or breadth-first
-///   - children: the closure for obtaining the child elements
-///   - predicate: the predicate
-/// - Returns: all the elements of the tree
-@inlinable public func treefirst<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, predicate: (T) throws -> Bool) rethrows -> T? where C.Element == T {
-    var match: T? = nil // track whether the matched element was found
-    return try treeduce(root: root, initialResult: match, depthFirst: depthFirst, children: children) { _, indexElement in
-        if match != nil {
-            return nil // we found a match
-        }
-
-        if try predicate(indexElement.1) == true {
-            match = indexElement.1
-        }
-
-        return indexElement.1
-    }
-}
 
 
 #if canImport(OSLog)
@@ -198,14 +235,16 @@ import OSLog
 #endif
 
 /// Output a message with the amount of time the given block took to exeucte
-/// - Parameter msg: the message prefix closure accepting the result of the `block`
+/// - Parameter message: the static message to log
+/// - Parameter messageBlock: the dynamic message to log; the parameter to the closure is the result of the `block`
+/// - Parameter level: the log level fot `dbg`
 /// - Parameter threshold: the threshold below which a message will not be printed
 /// - Parameter functionName: the name of the calling function
 /// - Parameter fileName: the fileName containg the calling function
 /// - Parameter lineNumber: the line on which the function was called
 /// - Parameter block: the block to execute
 @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
-@inlinable public func prf<T>(_ message: @autoclosure () -> String? = nil, msg messageBlock: ((T) -> String)? = nil, threshold: Double = -0.0, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line, block: () throws -> T) rethrows -> T {
+@inlinable public func prf<T>(_ message: @autoclosure () -> String? = nil, msg messageBlock: ((T) -> String)? = nil, level: UInt8 = 0, threshold: Double = -0.0, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line, block: () throws -> T) rethrows -> T {
     //#if DEBUG
 
     let start: UInt64 = nanos()
@@ -223,7 +262,7 @@ import OSLog
     if secs >= threshold {
         let timeStr = timeInMS(fromNanos: start, to: end)
 
-        dbg(message(), messageBlock?(result), "time: \(timeStr)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+        dbg(level: level, message(), messageBlock?(result), "time: \(timeStr)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
     }
     return result
 }
