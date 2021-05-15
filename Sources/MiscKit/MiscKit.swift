@@ -81,8 +81,8 @@ import Foundation
 ///   - children: the closure for obtaining the child elements
 /// - Returns: all the elements of the tree
 @inlinable public func treefilter<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, predicate: (T) throws -> Bool) rethrows -> [T] where C.Element == T {
-    try treeduceIndexed(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, indexElement in
-        try predicate(indexElement.1) ? array + [indexElement.1] : array
+    try treeduce(root: root, initialResult: [], depthFirst: depthFirst, children: children) { _, array, element in
+        try predicate(element) ? array + [element] : array
     }
 }
 
@@ -113,37 +113,49 @@ import Foundation
 ///   - initialResult: the initial result
 ///   - depthFirst: whether the traverse depth-first or breadth-first
 ///   - children: the closure to obtain children for a parent
-///   - nextPartialResult: the reduction function; returning nil will halt evaluation and return the current result
+///   - nextPartialResult: the reduction function; setting the keepGoing to nil will return the current result
 /// - Throws: an error if either the `children` or `nextPartialResult` closures throw an error
 /// - Returns: the result as constructed from a traversal of the tree up to the point that `nextPartialResult` returns `nil`
 ///
 /// - Note: if the `IndexPath` of the tree element is not needed, then it is more efficient to use `treeduce`, which doesn't incur the overhead of tracking the index of the current element
-@inlinable public func treeduceIndexed<T, U, C: Collection>(root: T, initialResult: U, depthFirst: Bool, children: (T) throws -> C, nextPartialResult: (U, (IndexPath, T)) throws -> U?) rethrows -> U where C.Element == T {
+@inlinable public func treeduceIndexed<T, U, C: Collection>(root: T, initialResult: U, depthFirst: Bool, children: (T) throws -> C, nextPartialResult: (inout Bool, IndexPath, U, T) throws -> U) rethrows -> U where C.Element == T {
     var pending = [(IndexPath(), root)]
 
     var result = initialResult
-    while !pending.isEmpty {
+    var keepGoing = true
+    while keepGoing && !pending.isEmpty {
         let (index, node) = pending.removeFirst()
 
-        // returning nil from the transform indicates that we should end the traversal
-        guard let nextResult = try nextPartialResult(result, (index, node)) else {
-            return result
-        }
-
-        result = nextResult
+        result = try nextPartialResult(&keepGoing, index, result, node)
+        if keepGoing == false { break }
 
         let indexedChildren = try children(node).enumerated().map { childIndex, childNode in
             (index.appending(childIndex), childNode)
         }
 
-        if depthFirst {
-            pending.insert(contentsOf: indexedChildren, at: pending.startIndex)
-        } else {
-            pending.append(contentsOf: indexedChildren)
-        }
+        pending.insert(contentsOf: indexedChildren, at: depthFirst ? pending.startIndex : pending.endIndex)
     }
 
     return result
+}
+
+/// Returns the first indexed element that matches the given predicate.
+///
+/// - Parameters:
+///   - root: the root of the tree
+///   - depthFirst: depth-first or breadth-first
+///   - children: the child key path
+///   - predicate: the predicate
+/// - Returns: the first element of the tree to match the given predicate
+@inlinable public func treefirstIndexed<T, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, predicate: (_ index: IndexPath, _ element: T) throws -> Bool) rethrows -> (index: IndexPath, element: T)? where C.Element == T {
+    try treeduceIndexed(root: root, initialResult: (IndexPath, T)?.none, depthFirst: depthFirst, children: children) { keepGoing, index, array, element in
+        if try predicate(index, element) == true {
+            keepGoing = false // we've found the element
+            return (index, element)
+        } else {
+            return nil
+        }
+    }
 }
 
 /// Returns an enumeration of all the elements of the tree zipped with their `IndexPath` mapped over the given transform function.
@@ -158,8 +170,8 @@ import Foundation
 /// - Throws: any error that the `children` or `transform` functions throw
 /// - SeeAlso: treemap
 @inlinable public func treemapIndexed<T, U, C: Collection>(root: T, depthFirst: Bool = true, children: (T) throws -> C, transform: (_ index: IndexPath, _ element: T) throws -> U) rethrows -> [U] where C.Element == T {
-    try treeduceIndexed(root: root, initialResult: [], depthFirst: depthFirst, children: children) { array, indexElement in
-        array + [try transform(indexElement.0, indexElement.1)]
+    try treeduceIndexed(root: root, initialResult: [], depthFirst: depthFirst, children: children) { _, index, array, element in
+        array + [try transform(index, element)]
     }
 }
 
