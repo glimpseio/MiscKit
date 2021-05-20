@@ -198,7 +198,6 @@ import OSLog
 /// Logs the given items to `os_log` if `DEBUG` is set
 /// - Parameters:
 ///   - level: the level: 0 for default, 1 for debug, 2 for info, 3 for error, 4+ for fault
-@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 @inlinable public func dbg(level: UInt8 = 0, _ arg1: @autoclosure () -> Any? = nil, _ arg2: @autoclosure () -> Any? = nil, _ arg3: @autoclosure () -> Any? = nil, _ arg4: @autoclosure () -> Any? = nil, _ arg5: @autoclosure () -> Any? = nil, _ arg6: @autoclosure () -> Any? = nil, _ arg7: @autoclosure () -> Any? = nil, _ arg8: @autoclosure () -> Any? = nil, _ arg9: @autoclosure () -> Any? = nil, _ arg10: @autoclosure () -> Any? = nil, _ arg11: @autoclosure () -> Any? = nil, _ arg12: @autoclosure () -> Any? = nil, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line) {
     let logit: Bool
     #if DEBUG
@@ -221,7 +220,11 @@ import OSLog
 
         let message = "\(filePath):\(lineNumber) \(funcName): \(msg)"
         #if canImport(OSLog)
+        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
         os_log(level == 0 ? .default : level == 1 ? .debug : level == 2 ? .info : level == 3 ? .error : .fault, "%{public}@", message)
+        } else {
+            debugPrint(message) // fall back to good-old-fashioned printf
+        }
         #else
         debugPrint(message) // fall back to good-old-fashioned printf
         #endif
