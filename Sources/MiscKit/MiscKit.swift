@@ -221,7 +221,7 @@ import OSLog
         let message = "\(filePath):\(lineNumber) \(funcName): \(msg)"
         #if canImport(OSLog)
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, *) {
-        os_log(level == 0 ? .default : level == 1 ? .debug : level == 2 ? .info : level == 3 ? .error : .fault, "%{public}@", message)
+            os_log(level == 0 ? .default : level == 1 ? .debug : level == 2 ? .info : level == 3 ? .error : .fault, "%{public}@", message)
         } else {
             debugPrint(message) // fall back to good-old-fashioned printf
         }
