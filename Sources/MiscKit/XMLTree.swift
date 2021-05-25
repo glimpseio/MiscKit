@@ -4,7 +4,6 @@
 import Foundation
 #if canImport(FoundationXML)
 import FoundationXML
-#endif
 
 /// An XML Element Tree.
 @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
@@ -387,3 +386,4 @@ internal extension String {
         return str
     }
 }
+#endif // canImport(FoundationXML)
