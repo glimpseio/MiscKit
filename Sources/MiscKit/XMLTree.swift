@@ -2,6 +2,9 @@
 // Marc Prud'hommeaux, 2014-2021
 
 import Foundation
+
+#if !os(Windows) // possibly due to https://github.com/swiftwasm/swift/issues/2165
+
 #if canImport(FoundationXML)
 import FoundationXML
 #endif // canImport(FoundationXML)
@@ -387,3 +390,4 @@ internal extension String {
         return str
     }
 }
+#endif // !os(Windows)

@@ -53,6 +53,7 @@ class MiscKitTests : XCTestCase {
         XCTAssertEqual("XYZ", str)
     }
 
+    #if !os(Windows) // possibly due to https://github.com/swiftwasm/swift/issues/2165
     @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testParseXML() throws {
         #if !canImport(ObjectiveC)
@@ -152,7 +153,8 @@ class MiscKitTests : XCTestCase {
 
         XCTAssertEqual(["attr":"false", "bar": "1"], try parse("<foo attr=\"false\"><bar>1</bar></foo>")?.elementDictionary(attributes: true, childNodes: true))
     }
-
+    #endif // os(Windows)
+    
     #if canImport(Compression)
     @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testCompression() throws {
