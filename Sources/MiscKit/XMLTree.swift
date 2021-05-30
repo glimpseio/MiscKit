@@ -1,6 +1,4 @@
 // Various misc utilities
-// Marc Prud'hommeaux, 2014-2021
-
 import Foundation
 
 #if !os(Windows) // possibly due to https://github.com/swiftwasm/swift/issues/2165
@@ -318,7 +316,6 @@ public struct XMLTree : Hashable {
 
 
 /// Utilities for XMLTree
-@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 public extension XMLTree {
     /// Returns all the elements with the given name
     @inlinable func elements(named name: String, deep: Bool) -> [Self] {
@@ -364,7 +361,6 @@ public extension XMLTree {
     }
 }
 
-@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 internal extension String {
 
     /// Returns the string with the given XML entites escaped; the default does not include single apostrophes
