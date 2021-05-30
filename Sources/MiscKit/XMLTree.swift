@@ -10,7 +10,6 @@ import FoundationXML
 #endif // canImport(FoundationXML)
 
 /// An XML Element Tree.
-@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 public struct XMLTree : Hashable {
     public struct Entity : OptionSet {
         /// The format's default value.
