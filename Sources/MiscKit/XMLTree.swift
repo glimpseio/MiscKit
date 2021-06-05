@@ -50,7 +50,8 @@ public struct XMLTree : Hashable {
 
     /// Returns all the elements in a flattened list
     @inlinable public var flattenedElements: [XMLTree] {
-        return self.elementChildren + self.elementChildren.map(\.flattenedElements).joined()
+        treemap(root: self, children: \.elementChildren) { $0 }
+        // return self.elementChildren + self.elementChildren.map(\.flattenedElements).joined()
     }
 
     /// The attributes for this element
