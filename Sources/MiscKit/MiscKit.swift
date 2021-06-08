@@ -257,28 +257,31 @@ import OSLog
 /// - Parameter fileName: the fileName containg the calling function
 /// - Parameter lineNumber: the line on which the function was called
 /// - Parameter block: the block to execute
-@available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
 @inlinable public func prf<T>(_ message: @autoclosure () -> String? = nil, msg messageBlock: ((T) -> String)? = nil, level: UInt8 = 0, threshold: Double = -0.0, functionName: StaticString = #function, fileName: StaticString = #file, lineNumber: Int = #line, block: () throws -> T) rethrows -> T {
     //#if DEBUG
 
-    let start: UInt64 = nanos()
+    if #available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *) {
+        let start: UInt64 = nanos()
 
-    #if canImport(OSLog)
-    os_signpost(.begin, log: signpostLog, name: functionName)
-    defer { os_signpost(.end, log: signpostLog, name: functionName) }
-    #endif
+        #if canImport(OSLog)
+        os_signpost(.begin, log: signpostLog, name: functionName)
+        defer { os_signpost(.end, log: signpostLog, name: functionName) }
+        #endif
 
-    let result = try block()
+        let result = try block()
 
-    let end: UInt64 = max(nanos(), start)
-    let secs = Double(end - start) / 1_000_000_000.0
+        let end: UInt64 = max(nanos(), start)
+        let secs = Double(end - start) / 1_000_000_000.0
 
-    if secs >= threshold {
-        let timeStr = timeInMS(fromNanos: start, to: end)
+        if secs >= threshold {
+            let timeStr = timeInMS(fromNanos: start, to: end)
 
-        dbg(level: level, message(), messageBlock?(result), "time: \(timeStr)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+            dbg(level: level, message(), messageBlock?(result), "time: \(timeStr)", functionName: functionName, fileName: fileName, lineNumber: lineNumber)
+        }
+        return result
+    } else {
+        return try block()
     }
-    return result
 }
 
 
