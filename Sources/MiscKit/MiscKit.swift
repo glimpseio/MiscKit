@@ -321,8 +321,18 @@ import OSLog
 
 #endif
 
+
+//#if available(macOS 12, iOS 15, tvOS 15, watchOS 8, *)
+///// The platform-native string localization key
+//public typealias StringLocalizationKey = Foundation.StringLocalizationKey
+//#else
+//public typealias StringLocalizationKey = String
+//#endif
+
+
 /// Localize the given string
 @inlinable public func loc(_ msg: StaticString, comment: StaticString = "") -> String {
+    // TODO: use StringLocalizationKey in macOS 12 & iOS 15
     NSLocalizedString(msg.description, comment: comment.description)
 }
 
