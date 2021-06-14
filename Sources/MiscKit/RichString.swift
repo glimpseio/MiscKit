@@ -60,9 +60,9 @@ public struct RawRichString: RichStringProtocol, RawRepresentable {
     public typealias Index = Storage.Index
     public typealias UnicodeScalarView = Storage.UnicodeScalarView
 
-    public var startIndex: AttributedString.Index { rawValue.startIndex }
-    public var endIndex: AttributedString.Index { rawValue.endIndex }
-    public var unicodeScalars: AttributedString.UnicodeScalarView { rawValue.unicodeScalars }
+    public var startIndex: RichString.Index { rawValue.startIndex }
+    public var endIndex: RichString.Index { rawValue.endIndex }
+    public var unicodeScalars: RichString.UnicodeScalarView { rawValue.unicodeScalars }
 
     public var description: String { rawValue }
 }
