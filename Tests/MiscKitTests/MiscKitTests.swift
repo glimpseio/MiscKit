@@ -1,4 +1,3 @@
-#if !os(watchOS) // no testing on watchOS
 import XCTest
 import Dispatch
 import MiscKit
@@ -247,6 +246,22 @@ class MiscKitTests : XCTestCase {
             }
         }
     }
-}
-#endif
 
+    func testFileWrapper() throws {
+        let tmp = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
+        let dir = URL(fileURLWithPath: UUID().uuidString, isDirectory: true, relativeTo: tmp)
+        dbg(level: 5, "saving wrapper to", dir.path)
+
+        let f1 = FileWrapper(regularFileWithContents: "Hello Wrapper".data(using: .utf8) ?? Data())
+        let f2 = FileWrapper(regularFileWithContents: Data([1,2,3]))
+
+        let fw = FileWrapper(directoryWithFileWrappers: ["hello.txt": f1, "data.dat": f2])
+        try fw.write(to: dir, options: FileWrapper.WritingOptions.atomic, originalContentsURL: nil)
+
+        guard let ser = fw.serializedRepresentation else {
+            return XCTFail("could not serialize wrapper")
+        }
+
+        try ser.write(to: dir.appendingPathComponent("wrapper.rtfd")) // serialized form seems to start with "rtfd"
+    }
+}

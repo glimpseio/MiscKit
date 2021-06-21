@@ -22,22 +22,20 @@ jobs:
         run: swift test -v --configuration release -Xswiftc -enable-testing
 
   watchOS:
-    runs-on: macos-latest
+    runs-on: macos-11
     needs: [Linux] # Linux must pass first
 
     steps:
       - uses: actions/checkout@v2
-      # note that we just build rather than test because:
-      # “XCTest is not available when building for watchOS Simulator”
       - run: |
-            xcodebuild clean build \
+            xcodebuild clean test \
               -scheme "MiscKit" \
               -sdk "watchsimulator7.2" \
               -destination "OS=7.2,name=Apple Watch Series 6 - 44mm" \
               ONLY_ACTIVE_ARCH=NO CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
   iOS:
-    runs-on: macos-latest
+    runs-on: macos-11
     needs: [watchOS] # watchOS must pass first
 
     steps:
@@ -50,7 +48,7 @@ jobs:
               ONLY_ACTIVE_ARCH=NO CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
   tvOS:
-    runs-on: macos-latest
+    runs-on: macos-11
     needs: [iOS] # iOS must pass first
 
     steps:
