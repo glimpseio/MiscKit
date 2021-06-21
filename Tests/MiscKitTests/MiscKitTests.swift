@@ -247,6 +247,7 @@ class MiscKitTests : XCTestCase {
         }
     }
 
+    #if !os(Linux) && !os(Windows) // FileWrapper not yet implemented
     func testFileWrapper() throws {
         let tmp = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
         let dir = URL(fileURLWithPath: UUID().uuidString, isDirectory: true, relativeTo: tmp)
@@ -264,4 +265,5 @@ class MiscKitTests : XCTestCase {
 
         try ser.write(to: dir.appendingPathComponent("wrapper.rtfd")) // serialized form seems to start with "rtfd"
     }
+    #endif
 }
