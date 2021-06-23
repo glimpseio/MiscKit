@@ -85,6 +85,11 @@ jobs:
     needs: [Linux] # Linux must pass first
     steps:
       - uses: actions/checkout@v2
+      - name: Install iTunes
+        run: |
+          Install-Binary -Url "https://secure-appldnld.apple.com/itunes12/001-97787-20210421-F0E5A3C2-A2C9-11EB-A40B-A128318AD179/iTunes64Setup.exe" -Name "iTunes64Setup.exe" -ArgumentList ("-q")
+
+
       - uses: seanmiddleditch/gha-setup-vsdevenv@master
 
       - name: Install swift-5.4.1-RELEASE

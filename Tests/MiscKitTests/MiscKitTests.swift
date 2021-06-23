@@ -3,6 +3,17 @@ import Dispatch
 import MiscKit
 
 class MiscKitTests : XCTestCase {
+    func testFindDLLs() throws {
+        guard let fileEnumerator = FileManager.default.enumerator(at: URL(fileURLWithPath: "C:\\\\"), includingPropertiesForKeys: nil, options: [], errorHandler: { _, _ in true }) else {
+                throw XCTSkip("could not find C:")
+        }
+        for case let fileURL as URL in fileEnumerator {
+            if fileURL.pathExtension == "dll" || fileURL.pathExtension == "DLL" {
+                print("- FOUND DLL:", fileURL.path)
+            }
+        }
+    }
+
     @available(macOS 10.14, iOS 12.0, watchOS 5.0, tvOS 12.0, *)
     func testDbg() {
         dbg("test message")
