@@ -31,7 +31,7 @@ jobs:
             xcodebuild clean test \
               -scheme "MiscKit" \
               -sdk "watchsimulator" \
-              -destination "OS=7.4,name=Apple Watch Series 6 - 44mm" \
+              -destination "platform=watchOS Simulator,name=Apple Watch Series 6 - 44mm" \
               ONLY_ACTIVE_ARCH=NO CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
   iOS:
