@@ -63,7 +63,7 @@ class MiscKitTests : XCTestCase {
         #endif
 
         func roundTrip(xml string: String, to result: String? = nil, quote: String = "\"", compactCloseTags: Bool = false, line: UInt = #line) throws {
-            let item = try XMLTree.parse(data: string.data(using: .utf8) ?? .init())
+            let item = try XMLTree.parse(data: string.utf8Data)
             let xmlString = item.xmlString(declaration: "", quote: quote, compactCloseTags: compactCloseTags)
             XCTAssertEqual(result ?? string, xmlString, line: line)
         }

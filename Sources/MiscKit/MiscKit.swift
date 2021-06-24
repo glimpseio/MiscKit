@@ -8,6 +8,25 @@ import Foundation
 @discardableResult @inlinable public func wip<T>(_ value: T) -> T { value }
 
 
+public extension String {
+    /// The underlying UTF8 data for this string
+    @inlinable var utf8Data: Data {
+        // `data(using:.utf8)` should never fail, but if it does, fallback to the
+        // potentially slower Data(array:) initializer.
+        return self.data(using: .utf8) ?? Data(self.utf8)
+    }
+
+    /// The underlying UTF16 data for this string
+    @inlinable var utf16Data: Data {
+        // `data(using:.utf16)` should never fail, but if it does, fallback to the
+        // potentially slower Data(array:) initializer.
+        return self.data(using: .utf16) ?? Data() // Data(self.utf16)
+    }
+
+}
+
+
+
 /// The equivalent of `Sequence.reduce` for trees, including `IndexPath` to elements.
 /// - Parameters:
 ///   - root: the root element of the tree

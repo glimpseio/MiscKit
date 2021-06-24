@@ -94,7 +94,7 @@ public struct XMLTree : Hashable {
         var node = XMLTree(elementName: elementName, attributes: attributes)
         if let content = content {
             if CDATA {
-                node.children.append(.cdata(content.data(using: .utf8) ?? .init()))
+                node.children.append(.cdata(content.utf8Data))
             } else {
                 node.children.append(.content(content))
             }
