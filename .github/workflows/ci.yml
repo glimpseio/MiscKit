@@ -29,6 +29,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
             xcodebuild clean test \
+              -disablePackageRepositoryCache \
               -configuration Release \
               -scheme "MiscKit" \
               -sdk "watchsimulator" \
@@ -43,6 +44,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
             xcodebuild clean test \
+              -disablePackageRepositoryCache \
               -configuration Release \
               -scheme "MiscKit" \
               -sdk "iphonesimulator" \
@@ -57,6 +59,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
             xcodebuild clean test \
+              -disablePackageRepositoryCache \
               -configuration Release \
               -scheme "MiscKit" \
               -sdk "appletvsimulator" \
